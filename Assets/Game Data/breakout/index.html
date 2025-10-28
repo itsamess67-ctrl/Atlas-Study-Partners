@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Breakout Infinity - Dynamic Shapes</title>
+<style>
+  body {
+    margin: 0;
+    background: radial-gradient(circle at top, #1b2735, #090a0f);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #fff;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  canvas {
+    border-radius: 15px;
+    background: linear-gradient(135deg, #283048, #859398);
+    display: block;
+    box-shadow: 0 0 30px rgba(255,255,255,0.2);
+  }
+  #ui {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    z-index: 2;
+  }
+  #ui span {
+    margin: 0 20px;
+    font-size: 20px;
+    font-weight: bold;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+  }
+  #screen {
+    position: absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.85);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    font-size: 40px;
+    color: #ffcc00;
+    text-align: center;
+    display: none;
+    z-index: 10;
+  }
+  #screen button {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 25px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    background: #00ffcc;
+    color: #000;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0,255,204,0.7);
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+  <span id="score">Score: 0</span>
+  <span id="lives">Lives: 3</span>
+  <span id="level">Level: 1</span>
+</div>
+<div id="screen">
+  <div id="screenText">GAME OVER</div>
+  <button onclick="restartGame()">Restart</button>
+</div>
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+let paddleHeight = 15, paddleWidth = 150, paddleX = (canvas.width - paddleWidth)/2;
+let ballRadius = 12;
+let x = canvas.width/2, y = canvas.height - 50;
+let dx = 4, dy = -4;
+let rightPressed=false, leftPressed=false;
+let brickColumnCount = 9, brickWidth = 75, brickHeight = 20, brickPadding = 10;
+let brickOffsetTop = 50, brickOffsetLeft = 35;
+let score=0, lives=3, level=1;
+let bricks=[];
+const uiScore = document.getElementById("score");
+const uiLives = document.getElementById("lives");
+const uiLevel = document.getElementById("level");
+const screen = document.getElementById("screen");
+const screenText = document.getElementById("screenText");
+
+// Create bricks dynamically with shape patterns
+function createBricks(){
+  bricks=[];
+  let rows = Math.min(5 + level-1, 12);
+  for(let c=0;c<brickColumnCount;c++){
+    bricks[c]=[];
+    for(let r=0;r<rows;r++){
+      let offsetY = 0;
+      let offsetX = 0;
+      if(level===1){
+        // Classic rectangle grid
+        offsetX = 0; offsetY = 0;
+      } else if(level%3===2){
+        // Wave pattern
+        offsetY = Math.sin(c/brickColumnCount*Math.PI*2 + level/2) * 20;
+      } else if(level%3===0){
+        // Pyramid/Triangle shape
+        let bricksInRow = Math.max(brickColumnCount - r*2, 1);
+        offsetX = ((brickColumnCount-bricksInRow)/2) * (brickWidth + brickPadding);
+      } else {
+        // Random scattered
+        offsetY = Math.random()*15 - 7; 
+        offsetX = Math.random()*15 - 7;
+      }
+      bricks[c][r] = {x:0,y:0,status:1, offsetX: offsetX, offsetY: offsetY};
+    }
+  }
+}
+createBricks();
+
+// Controls
+document.addEventListener("keydown", e => {if(e.key==="Right"||e.key==="ArrowRight") rightPressed=true; if(e.key==="Left"||e.key==="ArrowLeft") leftPressed=true;});
+document.addEventListener("keyup", e => {if(e.key==="Right"||e.key==="ArrowRight") rightPressed=false; if(e.key==="Left"||e.key==="ArrowLeft") leftPressed=false;});
+
+// Collision
+function collisionDetection(){
+  for(let c=0;c<brickColumnCount;c++){
+    for(let r=0;r<bricks[c].length;r++){
+      let b = bricks[c][r];
+      if(b.status===1){
+        if(x>b.x && x<b.x+brickWidth && y>b.y && y<b.y+brickHeight){
+          dy=-dy;
+          b.status=0;
+          score++;
+          uiScore.textContent = "Score: "+score;
+          if(score % (brickColumnCount*bricks[0].length) === 0){
+            level++;
+            uiLevel.textContent = "Level: "+level;
+            dx *= 1.05; dy *= 1.05;
+            x = canvas.width/2; y = canvas.height-50;
+            paddleX = (canvas.width-paddleWidth)/2;
+            createBricks();
+          }
+        }
+      }
+    }
+  }
+}
+
+// Drawing functions
+function drawBall(){
+  let gradient = ctx.createRadialGradient(x-3,y-3,2,x,y,ballRadius);
+  gradient.addColorStop(0,"#ffff66");
+  gradient.addColorStop(1,"#ff9900");
+  ctx.beginPath();
+  ctx.arc(x,y,ballRadius,0,Math.PI*2);
+  ctx.fillStyle=gradient;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawPaddle(){
+  let grad = ctx.createLinearGradient(paddleX,0,paddleX+paddleWidth,0);
+  grad.addColorStop(0,"#00ffcc");
+  grad.addColorStop(1,"#0066ff");
+  ctx.beginPath();
+  ctx.rect(paddleX,canvas.height-paddleHeight,paddleWidth,paddleHeight);
+  ctx.fillStyle=grad;
+  ctx.fill();
+  ctx.closePath();
+}
+
+function drawBricks(){
+  for(let c=0;c<brickColumnCount;c++){
+    for(let r=0;r<bricks[c].length;r++){
+      if(bricks[c][r].status===1){
+        let brickX = c*(brickWidth+brickPadding)+brickOffsetLeft + bricks[c][r].offsetX;
+        let brickY = r*(brickHeight+brickPadding)+brickOffsetTop + bricks[c][r].offsetY;
+        bricks[c][r].x=brickX; bricks[c][r].y=brickY;
+        let grad = ctx.createLinearGradient(brickX,brickY,brickX+brickWidth,brickY+brickHeight);
+        grad.addColorStop(0,`hsl(${r*30+level*5},80%,50%)`);
+        grad.addColorStop(1,`hsl(${r*30+level*5},70%,40%)`);
+        ctx.beginPath();
+        ctx.rect(brickX,brickY,brickWidth,brickHeight);
+        ctx.fillStyle=grad;
+        ctx.fill();
+        ctx.closePath();
+      }
+    }
+  }
+}
+
+function drawPaddleAndBall(){
+  drawPaddle(); drawBall();
+}
+
+function draw(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  drawBricks(); drawPaddleAndBall();
+  collisionDetection();
+
+  if(x+dx>canvas.width-ballRadius || x+dx<ballRadius) dx=-dx;
+  if(y+dy<ballRadius) dy=-dy;
+  else if(y+dy>canvas.height-ballRadius){
+    if(x>paddleX && x<paddleX+paddleWidth) dy=-dy;
+    else {
+      lives--;
+      uiLives.textContent = "Lives: "+lives;
+      if(lives<=0){ showScreen("GAME OVER"); return; }
+      x = canvas.width/2; y = canvas.height-50; paddleX=(canvas.width-paddleWidth)/2;
+    }
+  }
+
+  if(rightPressed && paddleX < canvas.width-paddleWidth) paddleX+=7;
+  if(leftPressed && paddleX>0) paddleX-=7;
+
+  x+=dx; y+=dy;
+  requestAnimationFrame(draw);
+}
+
+function showScreen(message){
+  screenText.textContent=message;
+  screen.style.display="flex";
+  cancelAnimationFrame(draw);
+}
+
+function restartGame(){
+  score=0; lives=3; level=1; dx=4; dy=-4;
+  uiScore.textContent="Score: 0"; uiLives.textContent="Lives: 3"; uiLevel.textContent="Level: 1";
+  x=canvas.width/2; y=canvas.height-50; paddleX=(canvas.width-paddleWidth)/2;
+  createBricks();
+  screen.style.display="none";
+  draw();
+}
+
+draw();
+</script>
+</body>
+</html>
