@@ -3,9 +3,172 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Atlas Study Partners v2.0</title>
+<title>Atlas Study Partners v2.1</title>
 <link rel="icon" href="Assets/Pictures/Non-edited/Atlas-n.png">
 <style>
+/* === Fix font fallback === */
+body, button, h1, h2, h3, p, a {
+  font-family: "Poppins", "Inter", "Segoe UI", "Roboto", sans-serif;
+  font-display: swap;
+}
+/* Universal ChromeOS Font Rendering Fix */
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+               Roboto, Oxygen, Ubuntu, Cantarell,
+               "Helvetica Neue", sans-serif !important;
+
+  /* Makes ChromeOS render bolder text properly */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* === Responsive grid layout === */
+.games-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  justify-content: center;
+}
+
+/* === Responsive panels === */
+#saveTools, #creditsPanel {
+  max-width: 240px;
+  width: 90%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  body {
+    zoom: 0.9; /* gently zoom out on smaller devices */
+  }
+}
+
+@media (max-width: 900px) {
+  #saveTools {
+    position: static;
+    margin: 10px auto;
+  }
+  #creditsPanel {
+    position: static;
+    margin: 10px auto;
+  }
+  .games-grid {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
+}
+/* --- PERFECT GREEN TOGGLE --- */
+.canvas-switch {
+    position: relative;
+    width: 46px;
+    height: 24px;
+    border-radius: 24px;
+    background: #777;
+    cursor: pointer;
+    transition: background 0.25s ease;
+    display: inline-block;
+}
+
+/* hide checkbox */
+.canvas-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+/* background color layer */
+.canvas-switch-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 24px;
+    background: #777;
+    transition: background 0.25s ease;
+}
+
+/* knob */
+.canvas-switch .knob {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    top: 2px;
+    left: 2px;
+    border-radius: 50%;
+    background: white;
+    transition: left 0.25s ease;
+}
+
+/* checked state */
+.canvas-switch input:checked ~ .canvas-switch-bg {
+    background: #2ecc71; /* GREEN */
+}
+
+.canvas-switch input:checked ~ .knob {
+    left: 24px; /* slide right */
+}
+
+/* === Fix button scaling on touch devices === */
+button {
+  font-size: 0.9rem;
+  padding: 6px 10px;
+}
+
+/* === Save Tools - match Credits style === */
+.side-toggle {
+  position: fixed;
+  top: 120px;
+  left: 20px;
+  z-index: 45;
+  background: #0ea5a4;
+  color: #fff;
+  border: 0;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+}
+
+.side-panel-left {
+  position: fixed;
+  top: 100px;
+  left: -340px;              /* hidden offscreen by default (matches credits right:-420) */
+  width: 320px;
+  height: 80%;
+  background: #111;
+  color: #fff;
+  border-radius: 0 10px 10px 0;
+  padding: 14px;
+  overflow-y: auto;
+  transition: left 0.35s ease;
+  z-index: 44;
+  box-shadow: 0 6px 30px rgba(0,0,0,0.45);
+}
+
+.side-panel-left.active {
+  left: 0;                   /* slide in */
+}
+
+.side-panel-left h3 { margin-top: 0; color: #0ea5a4; }
+.side-panel-inner { font-size: 14px; }
+
+/* Mobile behavior: panels become stacked content (no fixed panels) */
+@media (max-width: 900px) {
+  .side-toggle { left: 12px; top: 100px; }
+  .side-panel-left {
+    position: static;
+    left: auto;
+    width: 92%;
+    margin: 12px auto;
+    border-radius:12px;
+    height: auto;
+    max-height: none;
+  }
+  .side-panel-left.active { left: auto; }
+}
+
 body {
   font-family: Inter, system-ui;
   background: #0a0a0a;
@@ -21,6 +184,7 @@ body {
 .header h1 {margin: 0;font-size: 28px}
 .header .version {font-size: 14px}
 .container {max-width: 1100px;margin: 20px auto;padding: 0 20px}
+
 
 /* Grid */
 #gameGrid {
@@ -90,55 +254,52 @@ body {
   z-index: 10;
 }
 
-/* Save Tools */
-#savePanel {
-  position: fixed;
-  top: 100px;
-  left: 20px;
-  background: #111;
-  padding: 12px;
-  border-radius: 10px;
-  width: 220px;
-}
-#savePanel button {
-  width: 100%;
-  background: #0ea5a4;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px;
-  margin: 6px 0;
-  cursor: pointer;
+
+/* Make the credits scroll area wider WITHOUT stretching the table */
+.collapsible-content {
+    max-height: 350px;
+    overflow-y: auto;
+    overflow-x: auto;
+    padding: 10px 20px;       /* wider left/right interior spacing */
+    border-left: 3px solid #e0e0e0;
+    background: #fafafa;
+    border-radius: 0 0 10px 10px;
+
+    /* ✨ NEW: expand the scrollable area itself */
+    width: calc(100% - 40px); /* adds breathing room like your original */
+    margin: 0 auto;           /* center it */
 }
 
-/* Credits Sidebar */
-#creditsPanel {
-  position: fixed;
-  top: 100px;
-  right: -420px;
-  width: 400px;
-  height: 80%;
-  background: #111;
-  color: #fff;
-  border-radius: 10px 0 0 10px;
-  overflow-y: auto;
-  transition: right 0.4s ease;
-  padding: 15px;
-  z-index: 20;
+/* Keep the table at natural width */
+.collapsible-content table {
+    min-width: 450px;
+    width: auto;              /* important: do NOT stretch it */
 }
-#creditsPanel.active {right: 0;}
-#creditsToggle {
-  position: fixed;
-  top: 110px;
-  right: 20px;
-  background: #0ea5a4;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
-  z-index: 25;
+
+
+/* Fix header so blue circle emoji fits */
+.collapsible-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #f1f1f1;
+    border-radius: 10px;
+    cursor: pointer;
+    user-select: none;
 }
+
+
+/* Fix chevron size + rotation */
+.chevron {
+    margin-left: auto;
+    font-size: 20px;
+    transition: transform 0.25s;
+}
+.chevron.open {
+    transform: rotate(90deg);
+}
+
 #creditsPanel table {
   width: 100%;
   border-collapse: collapse;
@@ -152,25 +313,229 @@ body {
   text-align: left;
   color: #0ea5a4;
 }
+/* === Search Bar Styling === */
+#searchContainer {
+  text-align: center;
+  margin: 20px auto;
+}
+
+#searchInput {
+  width: 80%;
+  max-width: 400px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid #0ea5a4;
+  background: #111;
+  color: white;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+}
+
+#searchInput:focus {
+  border-color: #06b6d4;
+  box-shadow: 0 0 6px rgba(6, 182, 212, 0.6);
+}
+/* Collapsible Panel Wrapper */
+.collapsible-wrapper {
+    width: 260px;
+    margin: 10px 0;
+    font-family: inherit;
+}
+
+/* Header Bar */
+.collapsible-header {
+    background: #00A8A8;
+    padding: 10px 12px;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: white;
+    font-size: 18px;
+    font-weight: 600;
+    user-select: none;
+    transition: 0.2s;
+}
+
+.collapsible-header:hover {
+    filter: brightness(1.1);
+}
+
+/* Emoji Icon */
+.collapsible-header .emoji {
+    font-size: 22px;
+}
+
+/* Chevron › */
+.chevron {
+    margin-left: auto;
+    font-size: 22px;
+    transition: transform 0.25s ease;
+}
+
+/* Panel Content */
+.collapsible-content {
+    background: #111;
+    margin-top: 6px;
+    padding: 12px;
+    border-radius: 12px;
+    border: 1px solid #00A8A8;
+    display: none;
+}
+
+.collapsible-content button {
+    width: 100%;
+    padding: 8px;
+    background: #00A8A8;
+    border: none;
+    color: white;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.collapsible-content button:hover {
+    filter: brightness(1.1);
+}
+
+.panel-description {
+    font-size: 13px;
+    color: #bbb;
+    margin-top: 5px;
+}
+/* ChromeOS Font Fix */
+* {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                 Roboto, Oxygen, Ubuntu, Cantarell,
+                 "Helvetica Neue", sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+}
+
+/* Announcement popup */
+.popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.7);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+}
+
+.popup-box {
+    background: #1e1e1e;
+    padding: 25px;
+    width: 350px;
+    border-radius: 12px;
+    border: 2px solid #00d8c4;
+    box-shadow: 0 0 20px rgba(0,255,240,0.3);
+}
+
+.popup-box h2 {
+    margin-top: 0;
+}
+
+.popup-box ul {
+    margin-left: 20px;
+}
+
+.popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 15px;
+}
+
+.popup-buttons button {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background: #00c8ff;
+    font-weight: bold;
+    color: black;
+}
+
+/* Tour overlay */
+.tour-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.65);
+    z-index: 3000;
+}
+
+.tour-message {
+    position: absolute;
+    background: #00d8c4;
+    padding: 12px 18px;
+    border-radius: 10px;
+    font-size: 1.1rem;
+    max-width: 250px;
+    color: black;
+    font-weight: bold;
+}
+
+.tour-next {
+    position: absolute;
+    bottom: 40px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 18px;
+    background: white;
+    color: black;
+    border: none;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
 </style>
 </head>
 <body>
 
 <header class="header">
-  <h1>Atlas Study Partners <span class="version">v2.0</span></h1>
+  <h1>Atlas Study Partners <span class="version">v2.1</span></h1>
   <p>Email <a href="mailto:atlasstudypartnersofficial@gmail.com" style="color:#fff;">atlasstudypartnersofficial@gmail.com</a> for game requests</p>
 </header>
 
-<div id="savePanel">
-  <h3>Save Tools</h3>
-  <button onclick="exportAll()">Export All</button>
-  <button onclick="importAll()">Import</button>
+<!-- COLLAPSIBLE SAVE TOOLS -->
+<div class="collapsible-wrapper">
+    <div class="collapsible-header" onclick="togglePanel('saveToolsPanel')">
+        <span class="emoji">💾</span>
+        <span class="collapsible-title">Save Tools</span>
+        <span class="chevron" id="saveToolsChevron">›</span>
+    </div>
+
+    <div class="collapsible-content" id="saveToolsPanel">
+        <button onclick="exportAll()">Export All</button>
+        <button onclick="importAll()">Import</button>
+        <p class="panel-description">
+            Export copies localStorage to clipboard.<br>
+            Import pastes JSON to restore.
+        </p>
+    </div>
 </div>
 
-<button id="creditsToggle" onclick="toggleCredits()">Show Credits</button>
+<!-- COLLAPSIBLE CREDITS PANEL -->
+<div class="collapsible-wrapper">
+    <div class="collapsible-header" onclick="togglePanel('creditsPanel')">
+        <span class="emoji">📜</span>
+        <span class="collapsible-title">Credits</span>
+        <span class="chevron" id="creditsChevron">›</span>
+    </div>
 
-<div id="creditsPanel">
-  <h2>Game Credits</h2>
+    <div class="collapsible-content" id="creditsPanel">
+          <h2>Game Credits</h2>
 
   <table>
     <tr><th>Name</th><th>Original Creator</th><th>Official Site</th></tr>
@@ -257,8 +622,23 @@ body {
 
   </table>
     </table>
-</div> <!-- end of creditsPanel -->
-<main class="container">
+    </div>
+</div>
+
+
+<div id="canvasToggleWrapper">
+    <span id="canvasSwitchLabel">Switch to Canvas</span>
+
+    <label class="canvas-switch">
+        <input type="checkbox" id="canvasToggle">
+        <span class="canvas-switch-bg"></span>
+        <span class="knob"></span>
+    </label>
+</div>
+<!-- === Search Bar === -->
+<div id="searchContainer">
+  <input type="text" id="searchInput" placeholder="Search games..." />
+</div>
 
 <main class="container">
   <h2>Games</h2>
@@ -271,9 +651,35 @@ body {
       <button onclick="reloadGame()">Reload Game</button>
       <button onclick="toggleFullscreen()">Toggle Fullscreen</button>
       <button onclick="openInNewTab()">Open in New Tab</button>
+      
     </div>
   </div>
 </main>
+<!-- VERSION ANNOUNCEMENT POPUP -->
+<div id="announcementPopup" class="popup-overlay">
+    <div class="popup-box">
+        <h2> Introducing Version 2.1</h2>
+        <p>We've added new features and improvements to help you navigate more easily!</p>
+
+        <ul>
+            <li>Better Search Bar</li>
+            <li>New Save Tools panel</li>
+            <li>Updated Credits panel</li>
+            <li>Switch to Canvas toggle</li>
+        </ul>
+
+        <div class="popup-buttons">
+            <button id="startTourBtn">Start Tour</button>
+            <button id="closeAnnouncementBtn">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- TOUR HIGHLIGHT OVERLAY -->
+<div id="tourOverlay" class="tour-overlay" style="display:none;">
+    <div id="tourMessage" class="tour-message"></div>
+    <button id="nextTourStep" class="tour-next">Next</button>
+</div>
 
 <script>
 function exportAll(){
@@ -298,22 +704,30 @@ function loadGame(p){
   viewer.style.display="flex";
   window.scrollTo({top:viewer.offsetTop-20,behavior:"smooth"});
 }
-function goHome(){
-  viewer.style.display="none";
-  grid.style.display="grid";
-  frame.src="";
-  window.scrollTo({top:0,behavior:"smooth"});
+function goHome() {
+    // 1. Exit fullscreen first
+    if (document.fullscreenElement) {
+        document.exitFullscreen().finally(() => {
+            returnToHomeScreen();
+        });
+    } else {
+        returnToHomeScreen();
+    }
 }
+function returnToHomeScreen() {
+
+    // Restore your original home behavior
+    viewer.style.display = "none";
+    grid.style.display = "grid";
+    frame.src = "";
+    window.scrollTo({top: 0, behavior: "smooth"});
+}
+
 function reloadGame(){if(currentSrc)frame.src=currentSrc;}
 function toggleFullscreen(){if(!document.fullscreenElement){viewer.requestFullscreen();}else{document.exitFullscreen();}}
 function openInNewTab(){if(currentSrc)window.open(currentSrc,"_blank");}
 
-/* === CREDITS TOGGLE === */
-function toggleCredits(){
-  document.getElementById("creditsPanel").classList.toggle("active");
-  const t=document.getElementById("creditsToggle");
-  if(document.getElementById("creditsPanel").classList.contains("active")){t.textContent="Hide Credits";}else{t.textContent="Show Credits";}
-}
+
 
 /* === GAME LIST === */
 const games = [
@@ -323,11 +737,10 @@ const games = [
   {name:"12 Mini Battles", path:"Assets/Game Data/12 Mini Battles.html", logo:"Assets/Pictures/Non-edited/12MiniBattles-n.png"},
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
-  {name:"Adventure Capitalist", path:"Assets/Game Data/Adventure Capitalist.html", logo:"Assets/Pictures/Non-edited/AdCap-n.png"},
-  {name:"Amaze", path:"Assets/Game Data/Amaze.html", logo:"Assets/Pictures/Non-edited/Amaze-n.png"},
+
   {name:"Among Us", path:"Assets/Game Data/among-us/index.html", logo:"Assets/Pictures/Non-edited/AmongUs-n.png"},
-  {name:"Angry Birds", path:"Assets/Game Data/angry-birds/index.html", logo:"Assets/Pictures/Non-edited/AngryBirds-n.png"},
-  {name:"Aquapark.io", path:"Assets/Game Data/Aquapark.io.html", logo:"Assets/Pictures/Non-edited/Aquapark-n.png"},
+
+ 
   {name:"Backrooms", path:"Assets/Game Data/backrooms/index.html", logo:"Assets/Pictures/Non-edited/Backrooms-n.jfif"},
   {name:"Bad Ice Cream", path:"Assets/Game Data/bad-ice-cream/index.html", logo:"Assets/Pictures/Non-edited/BadIceCream-n.png"},
   {name:"Baldis Basics", path:"Assets/Game Data/baldis-basics/index.html", logo:"Assets/Pictures/Non-edited/BaldiBasics-n.png"},
@@ -338,8 +751,9 @@ const games = [
   {name:"Bridge Race", path:"Assets/Game Data/Bridge Race.html", logo:"Assets/Pictures/Non-edited/BridgeRace-n.png"},
   {name:'Boxing Random', path:'Assets/Game Data/boxingrandom/index.html', logo:'Assets/Pictures/Non-edited/BoxingRandom-n.jpg'},
   {name:'Breakout', path:'Assets/Game Data/breakout/index.html', logo:'Assets/Pictures/Non-edited/Breakout-n.jpg'},
+  {name:"Candy Crush", path: "Assets/Game Data/Candy Crush.html", logo: "Assets/Pictures/Non-edited/CandyCrush-n.png"}, 
   {name:"Cluster Rush", path:"Assets/Game Data/cluster-rush/index.html", logo:"Assets/Pictures/Non-edited/ClusterTruck-n.png"},
-  {name:"Cookie Clicker", path:"Assets/Game Data/cookieclicker/index.html", logo:"Assets/Pictures/Non-edited/CookieClicker-n.ico"},
+  {name:"Cookie Clicker", path:"Assets/Game Data/cookieclicker/index.html", logo:"Assets/Pictures/Non-edited/CookieClicker-n.ico", external:true}, 
   {name:"Crossyroad", path:"Assets/Game Data/crossyroad/index.html", logo:"Assets/Pictures/Non-edited/CrossyRoad-n.png"},
    {name:'Chess', path:'Assets/Game Data/chess/index.html', logo:'Assets/Pictures/Non-edited/Chess-n.png'},
   {name:'Chrome Dino', path:'Assets/Game Data/chromedino/index.html', logo:'Assets/Pictures/Non-edited/DinosaurGame-n.png'},
@@ -351,10 +765,10 @@ const games = [
   {name:"Five Nights at Freddys 2", path:"Assets/Game Data/Five Nights at Freddys 2.html", logo:"Assets/Pictures/Non-edited/FNAF2-n.png"},
   {name:"Five Nights at Freddys 3", path:"Assets/Game Data/Five Nights at Freddys 3.html", logo:"Assets/Pictures/Non-edited/FNAF3-n.png"},
   {name:"Five Nights at Freddys 4", path:"Assets/Game Data/Five Nights at Freddys 4.html", logo:"Assets/Pictures/Non-edited/FNAF4-n.png"},
-  {name:"Flappy Dunk", path:"Assets/Game Data/Flappy Dunk.html", logo:"Assets/Pictures/Non-edited/FlappyDunk-n.png"},
+  
   {name:"Fruit Ninja", path:"Assets/Game Data/fruitninja/index.html", logo:"Assets/Pictures/Non-edited/FruitNinja-n.jpg"},
    {name:'Flappy Bird', path:'Assets/Game Data/flappybird/index.html', logo:'Assets/Pictures/Non-edited/FlappyBird-n.webp'},
-  {name:"Going Balls", path:"Assets/Game Data/Going Balls.html", logo:"Assets/Pictures/Non-edited/GoingBalls-n.png"},
+ 
    {name:'Geometry Dash', path:'Assets/Game Data/geometrydash/index.html', logo:'Assets/Pictures/Non-edited/GeometryDash-n.jpg'},
   {name:"Granny", path:"Assets/Game Data/Granny.html", logo:"Assets/Pictures/Non-edited/Granny-n.png"},
    {name:'Idle Breakout', path:'Assets/Game Data/idle-breakout-main/idle-breakout-main/game.html', logo:'Assets/Pictures/Non-edited/IdleBreakout-n.png'},
@@ -371,24 +785,28 @@ const games = [
   {name:"Red Ball 4 Vol. 2", path:"Assets/Game Data/Red Ball 4 Vol. 2.html", logo:"Assets/Pictures/Non-edited/RedBall4-2-n.png"},
   {name:"Red Ball 4 Vol. 3", path:"Assets/Game Data/Red Ball 4 Vol. 3.html", logo:"Assets/Pictures/Non-edited/RedBall4-3-n.png"},
   {name:"Retro Bowl", path:"Assets/Game Data/bowl/index.html", logo:"Assets/Pictures/Non-edited/Retrobowl-n.png"},
-  {name:"Retro Bowl College", path:"Assets/Game Data/Retro bowl College.html", logo:"Assets/Pictures/Non-edited/RetroBowlCollege-n.png", external:true},
+ 
   {name:"Rooftop Snipers", path:"Assets/Game Data/rooftop-snipers/index.html", logo:"Assets/Pictures/Non-edited/RooftopSnipers-n.png"},
+  {name:"Run", path:"Assets/Game Data/Run 1.html", logo:" Assets/Pictures/Non-edited/Run1-n.png"},
+  {name: "Run 2", path: "Assets/Game Data/Run 2.html", logo: "Assets/Pictures/Non-edited/Run-2-n.png"},
   {name:"Run 3", path:"Assets/Game Data/Run 3.html", logo:"Assets/Pictures/Non-edited/Run3-n.png"},
-  {name:"Slither.io", path:"Assets/Game Data/Slither.io.html", logo:"Assets/Pictures/Non-edited/Slitherio-n.png"},
-   {name:'Slope', path:'Assets/Game Data/Slope-Game-main/Slope-Game-main/index.html', logo:'Assets/Pictures/Non-edited/Slope-n.png'},
+ {name: "Soccer Random", path: "Assets/Game Data/Soccer-Random/index.html", logo: "Assets/Pictures/Non-edited/SoccerRandom-n.jpg"},
+  {name:'Slope', path:'Assets/Game Data/Slope-Game-main/Slope-Game-main/index.html', logo:'Assets/Pictures/Non-edited/Slope-n.png'},
   {name:"Slope 2", path:"Assets/Game Data/Slope 2.html", logo:"Assets/Pictures/Non-edited/Slope2-n.png"},
-  {name:"Snowbattle.io", path:"Assets/Game Data/Snowbattle.io.html", logo:"Assets/Pictures/Non-edited/Snowbattleio-n.png"},
+ 
   {name:"Solar Smash", path:"Assets/Game Data/Solar Smash.html", logo:"Assets/Pictures/Non-edited/SolarSmash-n.png"},
-  {name:"Stacky Dash", path:"Assets/Game Data/Stacky Dash.html", logo:"Assets/Pictures/Non-edited/StackyDash-n.png"},
-  {name:"State.io", path:"Assets/Game Data/State.io.html", logo:"Assets/Pictures/Non-edited/Stateio-n.png"},
+ 
+ 
   {name:"Station Saturn", path:"Assets/Game Data/Station Saturn.html", logo:"Assets/Pictures/Non-edited/StationSaturn-n.png"},
   {name:"Steal A Brainrot", path:"Assets/Game Data/Steal A Brainrot.html", logo:"Assets/Pictures/Non-edited/StealABrainrot-n.png"},
   {name:"Temple Run 2", path:"Assets/Game Data/Temple Run 2.html", logo:"Assets/Pictures/Non-edited/TempleRun2-n.png"},
  {name:"Space Invaders", path:'Assets/Game Data/spaceinvaders/index.html', logo:'Assets/Pictures/Non-edited/SpaceInvaders-n.png'},
  {name:"Thats Not My Neighbor", path: 'Assets/Game Data/Thats Not My Neighbor.html', logo:"Assets/Pictures/Non-edited/ThatsNotMyNeighbor-n.png"},
+ {name:"Tunnel Rush", path: "Assets/Game Data/tunnel-rush/index.html", logo: "Assets/Pictures/Non-edited/TunnelRush-n.jpg"},
  {name:"The Impossible Quiz", path:"Assets/Game Data/the-impossible-quiz/index.html", logo:"Assets/Pictures/Non-edited/ImpossibleQuiz-n.webp"},
   {name:"The Man In The Window", path:"Assets/Game Data/The Man In The Window.html", logo:"Assets/Pictures/Non-edited/ManFromWindow-n.png"},
   {name:"Tomb of the Mask", path:"Assets/Game Data/Tomb Of The Mask.html", logo:"Assets/Pictures/Non-edited/TombOfMask-n.png"},
+  {name:"Volleyball Random", path:"Assets/Game Data/Volley-Random/index.html", logo:"Assets/Pictures/Non-edited/VolleyRandom-n.webp"},
   {name:"Wordle", path:"Assets/Game Data/wordle/index.html", logo:"Assets/Pictures/Non-edited/Wordle-n.png"},
   {name:"World Box", path:"Assets/Game Data/World Box.html", logo:"Assets/Pictures/Non-edited/WorldBox-n.png"},
   {name:"Worlds Hardest Game", path:"Assets/Game Data/worlds-hardest-game/index.html", logo:"Assets/Pictures/Non-edited/WorldHardestGame-n.jpeg"}
@@ -406,6 +824,194 @@ for(const g of games){
  }
  gridEl.appendChild(c);
 }
+
+(function(){
+  const saveToggle = document.getElementById('saveToggle');
+  const savePanel = document.getElementById('savePanel');
+  const creditsPanel = document.getElementById('creditsPanel'); // if you have it
+
+  if(!saveToggle || !savePanel) return;
+
+  function setSaveState(open) {
+    if(open) {
+      savePanel.classList.add('active');
+      savePanel.setAttribute('aria-hidden','false');
+      saveToggle.textContent = 'Hide Save Tools';
+      saveToggle.setAttribute('aria-expanded','true');
+      // hide credits if open to prevent overlap
+      if(creditsPanel && creditsPanel.classList.contains('active')) {
+        creditsPanel.classList.remove('active');
+        const cToggle = document.getElementById('creditsToggle');
+        if(cToggle) cToggle.textContent = 'Show Credits';
+      }
+    } else {
+      savePanel.classList.remove('active');
+      savePanel.setAttribute('aria-hidden','true');
+      saveToggle.textContent = 'Show Save Tools';
+      saveToggle.setAttribute('aria-expanded','false');
+    }
+  }
+
+  // Restore previous state (optional)
+  const prev = sessionStorage.getItem('asp_savepanel_open');
+  if(prev === '1') setSaveState(true);
+
+  saveToggle.addEventListener('click', ()=>{
+    const isOpen = savePanel.classList.contains('active');
+    setSaveState(!isOpen);
+    sessionStorage.setItem('asp_savepanel_open', (!isOpen) ? '1' : '0');
+  });
+})();
+
+
+// === Game Search Functionality ===
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById('searchInput');
+  const gameCards = document.querySelectorAll('#gameGrid .card, #games .game-card');
+
+  if (searchInput) {
+    searchInput.addEventListener('input', function() {
+      const query = this.value.toLowerCase();
+      gameCards.forEach(card => {
+        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
+        card.style.display = name.includes(query) ? 'block' : 'none';
+      });
+    });
+  }
+});
+
+
+const toggle = document.getElementById("canvasToggle");
+
+const defaultTitle = document.title;
+const defaultFavicon = document.querySelector("link[rel='icon']")?.href;
+const canvasIcon = "Assets/Pictures/Non-edited/canvas-n.png";
+
+toggle.addEventListener("change", () => {
+    const bg = toggle.parentElement.querySelector(".canvas-switch-bg");
+
+    // Change switch color
+    if (toggle.checked) {
+        bg.style.background = "#2ecc71";
+        document.title = "Dashboard";
+        changeFavicon(canvasIcon);
+    } else {
+        bg.style.background = "#777";
+        document.title = defaultTitle;
+        changeFavicon(defaultFavicon);
+    }
+});
+
+function changeFavicon(src) {
+    let link = document.querySelector("link[rel='icon']");
+    if (!link) {
+        link = document.createElement("link");
+        link.rel = "icon";
+        document.head.appendChild(link);
+    }
+    link.href = src;
+}
+function togglePanel(id) {
+    const panel = document.getElementById(id);
+    const chevron = document.getElementById(id === "saveToolsPanel" ? "saveToolsChevron" : "creditsChevron");
+
+    if (panel.style.display === "block") {
+        panel.style.display = "none";
+        chevron.style.transform = "rotate(0deg)";
+    } else {
+        panel.style.display = "block";
+        chevron.style.transform = "rotate(90deg)";
+    }
+}
+// Show announcement only first time
+window.addEventListener("load", () => {
+    if (!localStorage.getItem("hasSeenAnnouncement")) {
+        document.getElementById("announcementPopup").style.display = "flex";
+    }
+});
+
+// Close announcement
+document.getElementById("closeAnnouncementBtn").onclick = () => {
+    document.getElementById("announcementPopup").style.display = "none";
+    localStorage.setItem("hasSeenAnnouncement", "true");
+};
+
+// Start tour
+document.getElementById("startTourBtn").onclick = () => {
+    document.getElementById("announcementPopup").style.display = "none";
+    localStorage.setItem("hasSeenAnnouncement", "true");
+    startTour();
+};
+
+
+// ----------- TOUR SYSTEM -------------
+
+let step = 0;
+
+const tourSteps = [
+    {
+        selector: "#searchInput",
+        message: "This is the search bar! Use it to find any game instantly."
+    },
+    {
+        selector: ".collapsible-wrapper:nth-of-type(1)",
+        message: "Here are the Save Tools! Export or import your saved data anytime."
+    },
+    {
+        selector: ".collapsible-wrapper:nth-of-type(2)",
+        message: "This collapsible shows the full Credits list for all games."
+    },
+    {
+        selector: "#canvasToggleWrapper",
+        message: "This button switches between Dashboard and Canvas mode!"
+    }
+];
+
+function startTour() {
+    step = 0;
+    document.getElementById("tourOverlay").style.display = "block";
+    showStep();
+}
+
+function showStep() {
+    const stepInfo = tourSteps[step];
+    const element = document.querySelector(stepInfo.selector);
+    const messageBox = document.getElementById("tourMessage");
+
+    if (!element) return;
+
+    const rect = element.getBoundingClientRect();
+
+    messageBox.textContent = stepInfo.message;
+
+    messageBox.style.top = (rect.top - 70) + "px";
+    messageBox.style.left = (rect.left) + "px";
+
+    element.style.outline = "3px solid #00ffe1";
+    element.style.outlineOffset = "4px";
+
+    setTimeout(() => {
+        element.style.transition = "outline 0.3s ease";
+    }, 10);
+}
+
+document.getElementById("nextTourStep").onclick = () => {
+    const currentSelector = tourSteps[step].selector;
+    const element = document.querySelector(currentSelector);
+
+    // remove highlight
+    if (element) element.style.outline = "none";
+
+    step++;
+
+    if (step >= tourSteps.length) {
+        document.getElementById("tourOverlay").style.display = "none";
+        return;
+    }
+
+    showStep();
+};
+
 </script>
 </body>
 </html>
