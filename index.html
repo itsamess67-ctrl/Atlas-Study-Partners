@@ -3,544 +3,671 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Atlas Study Partners v2.1</title>
-<link rel="icon" href="Assets/Pictures/Non-edited/Atlas-n.png">
+<title>Math Master</title>
+<link id="favicon" rel="icon" href="Assets/Pictures/Non-edited/Math-n.png">
 <style>
-/* === Fix font fallback === */
-body, button, h1, h2, h3, p, a {
-  font-family: "Poppins", "Inter", "Segoe UI", "Roboto", sans-serif;
-  font-display: swap;
-}
-/* Universal ChromeOS Font Rendering Fix */
-* {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-               Roboto, Oxygen, Ubuntu, Cantarell,
-               "Helvetica Neue", sans-serif !important;
 
-  /* Makes ChromeOS render bolder text properly */
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-}
 
-/* === Responsive grid layout === */
-.games-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 20px;
-  justify-content: center;
+/* === Buttons (Unified Glass Theme) === */
+button:not(.dock-btn), .btn:not(.dock-btn) {
+    background: linear-gradient(145deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.25);
+    color: var(--text-primary);
+    border-radius: 99px; 
+    padding: 10px 20px; 
+    font-size: 14px; 
+    font-weight: 500;
+    cursor: pointer; 
+    transition: all 0.25s ease;
+    outline: none;
 }
-
-/* === Responsive panels === */
-#saveTools, #creditsPanel {
-  max-width: 240px;
-  width: 90%;
-  box-sizing: border-box;
+button:not(.dock-btn):hover, .btn:not(.dock-btn):hover {
+    background: rgba(255,255,255,0.08);
+    transform: translateY(-2px) scale(1.01);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.45), 0 0 12px rgba(255,255,255,0.06) inset;
 }
 
-@media (max-width: 1200px) {
-  body {
-    zoom: 0.9; /* gently zoom out on smaller devices */
-  }
+
+/* === Viewer === */
+.viewer {
+    display: none; flex-direction: column; margin-top: 20px;
+    background: #000; border-radius: var(--radius-lg); overflow: hidden;
+    height: 80vh; border: 1px solid var(--glass-border); position: relative; z-index: 500;
+    box-shadow: 0 50px 100px rgba(0,0,0,0.8);
+}
+.viewer iframe { border: 0; flex: 1; width: 100%; height: 100%; }
+
+/* NOTE: There used to be a circular icon-style rule here for .viewer-controls button.
+   We will override it later with the pill-style rules (matching index_christmas),
+   but keep the base .viewer-controls container look here. */
+.viewer-controls { 
+    display: flex; justify-content: center; gap: 20px; padding: 20px; 
+    background: rgba(20, 20, 20, 0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.06);
 }
 
-@media (max-width: 900px) {
-  #saveTools {
-    position: static;
-    margin: 10px auto;
-  }
-  #creditsPanel {
-    position: static;
-    margin: 10px auto;
-  }
-  .games-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  }
-}
-/* --- PERFECT GREEN TOGGLE --- */
-.canvas-switch {
-    position: relative;
-    width: 46px;
-    height: 24px;
-    border-radius: 24px;
-    background: #777;
+/* Back Home Button */
+#homeBtn { 
+    position: absolute; top: 20px; left: 20px; z-index: 10; 
+    background: rgba(0,0,0,0.6); backdrop-filter: blur(10px); 
+    color: white; border: 1px solid rgba(255,255,255,0.12); 
+    padding: 10px 20px; border-radius: 99px; font-weight: 600;
     cursor: pointer;
-    transition: background 0.25s ease;
-    display: inline-block;
+}
+#homeBtn:hover {
+    background: white; color: black;
 }
 
-/* hide checkbox */
-.canvas-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-    position: absolute;
+
+
+/* -----------------------------
+   OVERRIDE: Pill-style viewer controls (from index_christmas)
+   - Exact pill padding, radius, border, and hover animation
+   - Theme-neutral colors (no green hover, no red border)
+   ----------------------------- */
+
+.viewer-controls {
+    /* keep container rules but slightly reduce gap to match christmas layout */
+    display: flex; justify-content: center; gap: 15px; padding: 20px;
+    background: rgba(20,20,20,0.95); backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
-/* background color layer */
-.canvas-switch-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 24px;
-    background: #777;
-    transition: background 0.25s ease;
-}
-
-/* knob */
-.canvas-switch .knob {
-    position: absolute;
-    width: 20px;
-    height: 20px;
-    top: 2px;
-    left: 2px;
-    border-radius: 50%;
-    background: white;
-    transition: left 0.25s ease;
-}
-
-/* checked state */
-.canvas-switch input:checked ~ .canvas-switch-bg {
-    background: #2ecc71; /* GREEN */
-}
-
-.canvas-switch input:checked ~ .knob {
-    left: 24px; /* slide right */
-}
-
-/* === Fix button scaling on touch devices === */
-button {
-  font-size: 0.9rem;
-  padding: 6px 10px;
-}
-
-/* === Save Tools - match Credits style === */
-.side-toggle {
-  position: fixed;
-  top: 120px;
-  left: 20px;
-  z-index: 45;
-  background: #0ea5a4;
-  color: #fff;
-  border: 0;
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.35);
-}
-
-.side-panel-left {
-  position: fixed;
-  top: 100px;
-  left: -340px;              /* hidden offscreen by default (matches credits right:-420) */
-  width: 320px;
-  height: 80%;
-  background: #111;
-  color: #fff;
-  border-radius: 0 10px 10px 0;
-  padding: 14px;
-  overflow-y: auto;
-  transition: left 0.35s ease;
-  z-index: 44;
-  box-shadow: 0 6px 30px rgba(0,0,0,0.45);
-}
-
-.side-panel-left.active {
-  left: 0;                   /* slide in */
-}
-
-.side-panel-left h3 { margin-top: 0; color: #0ea5a4; }
-.side-panel-inner { font-size: 14px; }
-
-/* Mobile behavior: panels become stacked content (no fixed panels) */
-@media (max-width: 900px) {
-  .side-toggle { left: 12px; top: 100px; }
-  .side-panel-left {
-    position: static;
-    left: auto;
-    width: 92%;
-    margin: 12px auto;
-    border-radius:12px;
+.viewer-controls button {
+    width: auto;
     height: auto;
-    max-height: none;
-  }
-  .side-panel-left.active { left: auto; }
+    border-radius: 99px;
+    padding: 10px 24px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.16);
+    color: white;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+/* Hover: Theme-neutral white/glassy glow (keeps animation from christmas style) */
+.viewer-controls button:hover {
+    background: rgba(255,255,255,0.14);
+    box-shadow: 0 0 15px rgba(255,255,255,0.18);
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.28);
+}
+
+/* small responsive tweak for pills */
+@media (max-width: 480px) {
+    .viewer-controls button { padding: 8px 14px; font-size: 13px; }
+}
+
+
+/* =========================================
+   LIQUID GLASS THEME (Refined)
+   ========================================= */
+
+:root {
+    /* Core Glass Variables */
+    --glass-bg: rgba(30, 30, 30, 0.4); /* Darker base for contrast */
+    --glass-border: rgba(255, 255, 255, 0.15);
+    --glass-shine: rgba(255, 255, 255, 0.05);
+    
+    /* The Magic Sauce: Saturation & Blur */
+    --glass-backdrop: blur(40px) saturate(180%);
+    
+    --accent-color: #0ea5a4;
+    --ios-green: #34c759;
+    --text-primary: #ffffff;
+    --text-secondary: #d1d1d6;
+    --radius-lg: 28px;
+    --radius-md: 18px;
+    
+    /* Deep, layered shadows for depth */
+    --shadow-soft: 
+        0 20px 40px rgba(0,0,0,0.4),
+        0 0 0 1px rgba(255,255,255,0.1) inset; /* Inner light ring */
+}
+
+* {
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
 }
 
 body {
-  font-family: Inter, system-ui;
-  background: #0a0a0a;
-  color: #fff;
-  margin: 0;
-  overflow-x: hidden;
+    margin: 0;
+    color: var(--text-primary);
+    background-color: #000;
+    /* Rich, deep gradient background to show off the glass effect */
+    background-image: 
+        radial-gradient(circle at 15% 50%, rgba(14, 165, 164, 0.25), transparent 40%), 
+        radial-gradient(circle at 85% 30%, rgba(120, 50, 200, 0.15), transparent 40%),
+        linear-gradient(180deg, #050505 0%, #111 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    padding-bottom: 150px; 
+    overflow-x: hidden;
 }
+
+/* === SHARED GLASS CLASS (Used by Cards, Dock, Panels) === */
+.glass-panel {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-backdrop);
+    -webkit-backdrop-filter: var(--glass-backdrop);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--shadow-soft);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Add a "shine" gradient overlay to simulate lighting */
+.glass-panel::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 50%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.07) 0%, transparent 100%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* === BIGGER ICONS (SVG) === */
+.icon {
+    width: 32px; height: 32px;
+    stroke: white; stroke-width: 2;
+    fill: none; stroke-linecap: round; stroke-linejoin: round;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
+    position: relative; z-index: 2;
+}
+
+/* === Header === */
 .header {
-  background: linear-gradient(90deg, #0ea5a4, #06b6d4);
-  padding: 20px;
-  text-align: center;
+    background: transparent;
+    padding: 60px 20px 40px;
+    text-align: center;
 }
-.header h1 {margin: 0;font-size: 28px}
-.header .version {font-size: 14px}
-.container {max-width: 1100px;margin: 20px auto;padding: 0 20px}
+/* Find this section in your CSS */
+.version-input-bubble {
+    position: absolute; top: 100%; left: 50%; transform: translateX(-50%); margin-top: 10px;
+    background: #1a2a3a; border: 1px solid var(--christmas-green);
+    border-radius: var(--radius-md); padding: 10px; width: 250px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7); z-index: 1000;
+    display: none; flex-direction: column; gap: 8px;
+    
+    /* ADD THESE LINES TO FIX THE BLUR/TRANSPARENCY */
+    -webkit-text-fill-color: white; /* Resets the transparent text from H1 */
+    text-shadow: none;              /* Removes the glow from H1 */
+    font-size: 16px;                /* Resets font size */
+    letter-spacing: normal;         /* Resets spacing */
+    text-align: left;
+}
+.header h1 {
+    margin: 0; font-size: 56px; font-weight: 700; letter-spacing: -1.5px;
+    background: linear-gradient(180deg, #fff 20%, rgba(255,255,255,0.6) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    text-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+.header .version {
+    font-size: 14px; background: rgba(255,255,255,0.1); padding: 4px 12px;
+    border-radius: 99px; color: #fff; -webkit-text-fill-color: initial;
+    vertical-align: middle; margin-left: 12px; 
+    border: 1px solid rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+}
+.header p { color: var(--text-secondary); font-size: 17px; margin-top: 12px; font-weight: 400; }
+.header a { color: var(--accent-color); text-decoration: none; transition: 0.2s; font-weight: 500; }
+.header a:hover { color: #fff; text-shadow: 0 0 15px var(--accent-color); }
 
+/* === Layout Containers === */
+.container { max-width: 1280px; margin: 0 auto; padding: 0 30px; }
 
-/* Grid */
+/* === Game Grid === */
 #gameGrid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 18px;
-  justify-items: center;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 30px;
+    justify-items: center;
 }
+
+/* === Game Cards (Liquid Style) === */
 .card {
-  background: #111;
-  border-radius: 12px;
-  padding: 10px;
-  text-align: center;
-  width: 180px;
-  cursor: pointer;
-  transition: transform .15s;
-}
-.card:hover {transform: scale(1.05)}
-.card img {width: 100%;height: 160px;object-fit: cover;border-radius: 12px}
-.btn {
-  background: #0ea5a4;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 10px;
-  margin-top: 8px;
-  cursor: pointer;
-}
-
-/* Viewer */
-.viewer {
-  display: none;
-  flex-direction: column;
-  margin-top: 26px;
-  background: #000;
-  border-radius: 10px;
-  overflow: hidden;
-  height: 640px;
-  position: relative;
-}
-.viewer iframe {border: 0;flex: 1;width: 100%;height: 100%}
-.viewer-controls {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  padding: 10px;
-  background: #111;
-}
-.viewer-controls button {
-  background: #0ea5a4;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 6px 10px;
-  cursor: pointer;
-}
-#homeBtn {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  background: #0ea5a4;
-  border: none;
-  border-radius: 8px;
-  color: #fff;
-  padding: 8px 12px;
-  cursor: pointer;
-  z-index: 10;
-}
-
-
-/* Make the credits scroll area wider WITHOUT stretching the table */
-.collapsible-content {
-    max-height: 350px;
-    overflow-y: auto;
-    overflow-x: auto;
-    padding: 10px 20px;       /* wider left/right interior spacing */
-    border-left: 3px solid #e0e0e0;
-    background: #fafafa;
-    border-radius: 0 0 10px 10px;
-
-    /* ✨ NEW: expand the scrollable area itself */
-    width: calc(100% - 40px); /* adds breathing room like your original */
-    margin: 0 auto;           /* center it */
-}
-
-/* Keep the table at natural width */
-.collapsible-content table {
-    min-width: 450px;
-    width: auto;              /* important: do NOT stretch it */
-}
-
-
-/* Fix header so blue circle emoji fits */
-.collapsible-header {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
-    background: #f1f1f1;
-    border-radius: 10px;
+    /* Inherits glass properties via direct styles, refined here */
+    background: rgba(40, 40, 40, 0.3);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: var(--radius-lg);
+    padding: 15px;
+    text-align: center;
+    width: 100%;
     cursor: pointer;
-    user-select: none;
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy spring */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-10px) scale(1.03);
+    background: rgba(60, 60, 60, 0.4);
+    border-color: rgba(255,255,255,0.3);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.2) inset;
+}
+
+/* Shine effect on hover */
+.card::before {
+    content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0; transform: scale(0.5); transition: 0.5s ease-out;
+    pointer-events: none;
+}
+.card:hover::before { opacity: 1; transform: scale(1); }
+
+.card img { 
+    width: 100%; height: 160px; object-fit: cover; 
+    border-radius: var(--radius-md); margin-bottom: 15px; 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+}
+.card h3 { 
+    font-size: 16px; font-weight: 600; margin: 0 0 10px; color: #fff; 
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
 }
 
 
-/* Fix chevron size + rotation */
-.chevron {
-    margin-left: auto;
-    font-size: 20px;
-    transition: transform 0.25s;
-}
-.chevron.open {
-    transform: rotate(90deg);
-}
-
-#creditsPanel table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-#creditsPanel th, #creditsPanel td {
-  padding: 6px;
-  border-bottom: 1px solid #333;
-}
-#creditsPanel th {
-  text-align: left;
-  color: #0ea5a4;
-}
-/* === Search Bar Styling === */
-#searchContainer {
-  text-align: center;
-  margin: 20px auto;
-}
-
-#searchInput {
-  width: 80%;
-  max-width: 400px;
-  padding: 10px 14px;
-  border-radius: 8px;
-  border: 1px solid #0ea5a4;
-  background: #111;
-  color: white;
-  font-size: 1rem;
-  outline: none;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
-}
-
-#searchInput:focus {
-  border-color: #06b6d4;
-  box-shadow: 0 0 6px rgba(6, 182, 212, 0.6);
-}
-/* Collapsible Panel Wrapper */
-.collapsible-wrapper {
-    width: 260px;
-    margin: 10px 0;
-    font-family: inherit;
-}
-
-/* Header Bar */
-.collapsible-header {
-    background: #00A8A8;
-    padding: 10px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    color: white;
-    font-size: 18px;
+/* === CARD BUTTON OVERRIDES (Must be placed after base button styles) === */
+.card .btn {
+    width: 100%; margin-top: 5px; 
+    /* The base style provides the glass background */
     font-weight: 600;
-    user-select: none;
-    transition: 0.2s;
+}
+.card:hover .btn {
+    background: var(--accent-color); /* Primary action on card hover */
+    box-shadow: 0 0 20px var(--accent-color);
+    transform: none; /* Override general hover transform */
 }
 
-.collapsible-header:hover {
-    filter: brightness(1.1);
+/* === PRIMARY ACCENT BUTTONS (Modals/Login - keep accent color, improve hover) === */
+#versionInputBubble button, 
+#tourWelcomeModal button:first-of-type,
+#loginGate button {
+    background: var(--accent-color) !important;
+    border: 1px solid var(--accent-color) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(14, 165, 164, 0.5) !important;
+    transform: none; 
+}
+#versionInputBubble button:hover, 
+#tourWelcomeModal button:first-of-type:hover,
+#loginGate button:hover {
+    background: #007978 !important;
+    box-shadow: 0 0 20px var(--accent-color) !important;
+    transform: translateY(-2px) scale(1.02) !important;
 }
 
-/* Emoji Icon */
-.collapsible-header .emoji {
-    font-size: 22px;
+/* === UPDATED VIEWER CONTROLS (Pill Style, Neutral White Hover) === */
+.viewer-controls { 
+    display: flex; 
+    justify-content: center; 
+    gap: 15px; 
+    padding: 20px; 
+    background: rgba(20, 20, 20, 0.95); 
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255,255,255,0.1);
 }
 
-/* Chevron › */
-.chevron {
-    margin-left: auto;
-    font-size: 22px;
-    transition: transform 0.25s ease;
-}
-
-/* Panel Content */
-.collapsible-content {
-    background: #111;
-    margin-top: 6px;
-    padding: 12px;
-    border-radius: 12px;
-    border: 1px solid #00A8A8;
-    display: none;
-}
-
-.collapsible-content button {
-    width: 100%;
-    padding: 8px;
-    background: #00A8A8;
-    border: none;
+/* Pill Buttons (taken from index_christmas but theme-neutral) */
+.viewer-controls button {
+    width: auto;
+    height: auto;
+    border-radius: 99px;
+    padding: 10px 24px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
     color: white;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    font-size: 16px;
-    cursor: pointer;
-}
-
-.collapsible-content button:hover {
-    filter: brightness(1.1);
-}
-
-.panel-description {
-    font-size: 13px;
-    color: #bbb;
-    margin-top: 5px;
-}
-/* ChromeOS Font Fix */
-* {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-                 Roboto, Oxygen, Ubuntu, Cantarell,
-                 "Helvetica Neue", sans-serif !important;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-rendering: optimizeLegibility;
-}
-
-/* Announcement popup */
-.popup-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.7);
-    display: none;
-    justify-content: center;
-    align-items: center;
-    z-index: 2000;
-}
-
-.popup-box {
-    background: #1e1e1e;
-    padding: 25px;
-    width: 350px;
-    border-radius: 12px;
-    border: 2px solid #00d8c4;
-    box-shadow: 0 0 20px rgba(0,255,240,0.3);
-}
-
-.popup-box h2 {
-    margin-top: 0;
-}
-
-.popup-box ul {
-    margin-left: 20px;
-}
-
-.popup-buttons {
+    font-weight: 600;
     display: flex;
-    justify-content: space-between;
-    margin-top: 15px;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
 }
 
-.popup-buttons button {
-    padding: 8px 15px;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    background: #00c8ff;
-    font-weight: bold;
-    color: black;
+/* Hover: Option B — White glow but soft/glassy */
+.viewer-controls button:hover { 
+    background: rgba(255,255,255,0.15);
+    box-shadow: 0 0 12px rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+    border-color: rgba(255,255,255,0.3);
 }
 
-/* Tour overlay */
-.tour-overlay {
+
+/* === CREDITS PANEL === */
+.collapsible-wrapper { position: absolute; top: 30px; right: 30px; z-index: 50; }
+.collapsible-header {
+    background: rgba(20, 20, 20, 0.6); backdrop-filter: blur(20px); 
+    padding: 10px 20px; border-radius: 99px; 
+    border: 1px solid rgba(255,255,255,0.1); 
+    cursor: pointer; display: flex; align-items: center; gap: 10px; 
+    color: white; font-size: 14px; font-weight: 600;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); /* Changed transition */
+}
+.collapsible-header:hover { 
+    background: rgba(50,50,50,0.8); 
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5), 0 0 15px rgba(255,255,255,0.1) inset;
+}
+
+.collapsible-content {
+    background: rgba(30, 30, 30, 0.85); backdrop-filter: blur(40px); margin-top: 15px;
+    padding: 25px; border-radius: var(--radius-lg); 
+    border: 1px solid rgba(255,255,255,0.15);
+    display: none; position: absolute; right: 0; width: 320px; max-height: 500px; overflow-y: auto;
+    box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+}
+
+/* === APPLE DOCK CONTAINER === */
+.dock-container {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.65);
-    z-index: 3000;
-}
-
-.tour-message {
-    position: absolute;
-    background: #00d8c4;
-    padding: 12px 18px;
-    border-radius: 10px;
-    font-size: 1.1rem;
-    max-width: 250px;
-    color: black;
-    font-weight: bold;
-}
-
-.tour-next {
-    position: absolute;
     bottom: 40px;
     left: 50%;
     transform: translateX(-50%);
-    padding: 10px 18px;
-    background: white;
-    color: black;
-    border: none;
-    border-radius: 10px;
-    font-weight: bold;
-    cursor: pointer;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: auto;
+}
+
+/* === FLOATING POPUPS (Search, Canvas, Info, Saves) === */
+.floating-panel {
+    width: 380px;
+    /* Liquid Glass Style */
+    background: rgba(40, 40, 40, 0.65);
+    backdrop-filter: blur(50px) saturate(200%);
+    -webkit-backdrop-filter: blur(50px) saturate(200%);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-top: 1px solid rgba(255,255,255,0.3); /* Brighter top edge for light catching */
+    box-shadow: 0 40px 80px rgba(0,0,0,0.6);
+    
+    border-radius: 32px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    
+    /* Animation hooks */
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+    pointer-events: none;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: absolute;
+    bottom: 140px;
+}
+
+.floating-panel.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+}
+
+/* Search Input Styling */
+#searchInput {
+    width: 100%; 
+    background: rgba(0,0,0,0.3); 
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white; padding: 16px 20px; border-radius: 18px;
+    font-size: 18px; outline: none;
+    transition: 0.2s;
+}
+#searchInput:focus {
+    background: rgba(0,0,0,0.5);
+    border-color: var(--accent-color);
+}
+#searchInput::placeholder { color: #888; }
+#suggestions { text-align: center; font-size: 14px; color: var(--accent-color); padding-top: 5px; margin:0; }
+
+/* Canvas Panel specific */
+#canvasPanel {
+    flex-direction: row; align-items: center; justify-content: space-between;
+    width: 300px;
+}
+#canvasPanel span { font-weight: 600; font-size: 17px; color: white; }
+
+/* Toggle Switch */
+.ios-switch { position: relative; width: 56px; height: 34px; }
+.ios-switch input { opacity: 0; width: 0; height: 0; }
+.slider {
+    position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+    background-color: rgba(255,255,255,0.15);
+    transition: .4s; border-radius: 34px;
+}
+.slider:before {
+    position: absolute; content: ""; height: 28px; width: 28px;
+    left: 3px; bottom: 3px; background-color: white;
+    transition: .4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+input:checked + .slider { background-color: var(--ios-green); }
+input:checked + .slider:before { transform: translateX(22px); }
+
+/* === THE DOCK === */
+.bottom-dock {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    /* Heavy Glass Dock */
+    background: rgba(20, 20, 20, 0.5);
+    backdrop-filter: blur(60px) saturate(180%);
+    -webkit-backdrop-filter: blur(60px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-top: 1px solid rgba(255,255,255,0.25);
+    padding: 14px 20px;
+    border-radius: 40px;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+    transition: transform 0.3s ease;
+}
+
+.dock-btn {
+    width: 68px; height: 68px;
+    border-radius: 22px; 
+    background: linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02));
+    border: 1px solid rgba(255,255,255,0.1);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; position: relative;
+    transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.dock-btn:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-15px) scale(1.15); /* Classic macOS dock magnification */
+    margin: 0 10px;
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+    z-index: 10;
+}
+
+.dock-btn.active-mode {
+    background: rgba(255,255,255,0.3);
+    box-shadow: 0 0 25px rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+}
+
+/* Tooltips */
+.dock-btn::after {
+    content: attr(data-tooltip);
+    position: absolute; top: -50px; left: 50%;
+    transform: translateX(-50%) scale(0.8);
+    background: rgba(0,0,0,0.8); color: white;
+    padding: 6px 12px; border-radius: 8px;
+    font-size: 14px; font-weight: 600;
+    opacity: 0; pointer-events: none; transition: 0.2s;
+    backdrop-filter: blur(10px);
+}
+.dock-btn:hover::after { opacity: 1; transform: translateX(-50%) scale(1); top: -60px; }
+
+.dock-sep { width: 1px; height: 40px; background: rgba(255,255,255,0.15); margin: 0 5px; }
+
+
+
+/* === Login Gate & Tour === */
+#loginGate, #tourWelcomeModal { 
+    background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') !important; 
+    background-size: cover; background-position: center; 
+}
+#loginGate::before, #tourWelcomeModal::before { 
+    content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+    background: rgba(0,0,0,0.5); backdrop-filter: blur(30px); z-index: -1; 
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; }
+::-webkit-scrollbar-track { background: #111; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; border: 2px solid #111; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+/* Tour Highlight */
+.tour-highlight {
+    position: absolute;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+    border: 2px solid var(--accent-color);
+    border-radius: var(--radius-md);
+    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    pointer-events: none; /* Let clicks pass through */
+    z-index: 100000;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+    .dock-btn { width: 55px; height: 55px; }
+    .icon { width: 26px; height: 26px; }
+    .floating-panel { width: 90vw; bottom: 110px; }
+    .header h1 { font-size: 36px; }
+    #gameGrid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+}
+/* === VERSION NOTE POPUP === */
+.header .version-container {
+    position: relative; /* Key to positioning the bubble relative to the version number */
+    display: inline-block;
+}
+
+.header .version {
+    cursor: pointer; /* Visual cue that it's clickable */
+    user-select: none;
+}
+
+.version-input-bubble {
+    position: absolute;
+    top: 100%; /* Position below the version number */
+    left: 50%;
+    transform: translateX(-50%);
+    margin-top: 10px;
+    
+    background: #111;
+    border: 1px solid var(--accent-color);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    width: 250px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    z-index: 1000;
+
+    display: none; /* Starts hidden */
+    flex-direction: column;
+    gap: 8px;
+}
+/* Creates the small triangle (tail) at the top of the bubble */
+.version-input-bubble::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-width: 8px;
+    border-style: solid;
+    border-color: transparent transparent var(--accent-color) transparent;
+}
+
+.version-input-bubble textarea {
+    width: 100%;
+    height: 80px;
+    padding: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.05);
+    color: white;
+    resize: none;
+    font-size: 14px;
+    outline: none;
+}
+.version-input-bubble textarea:focus {
+    border-color: var(--accent-color);
+}
+
+/* === PRIMARY ACCENT BUTTONS (Modals/Login - keep accent color, improve hover) === */
+#versionInputBubble button, 
+#tourWelcomeModal button:first-of-type,
+#loginGate button {
+    background: var(--accent-color) !important;
+    border: 1px solid var(--accent-color) !important;
+    color: white !important;
+    box-shadow: 0 4px 10px rgba(14, 165, 164, 0.5) !important;
+    transform: none; 
+}
+#versionInputBubble button:hover, 
+#tourWelcomeModal button:first-of-type:hover,
+#loginGate button:hover {
+    background: #007978 !important;
+    box-shadow: 0 0 20px var(--accent-color) !important;
+    transform: translateY(-2px) scale(1.02) !important;
 }
 
 </style>
 </head>
 <body>
 
-<header class="header">
-  <h1>Atlas Study Partners <span class="version">v2.1</span></h1>
-  <p>Email <a href="mailto:atlasstudypartnersofficial@gmail.com" style="color:#fff;">atlasstudypartnersofficial@gmail.com</a> for game requests</p>
-</header>
-
-<!-- COLLAPSIBLE SAVE TOOLS -->
-<div class="collapsible-wrapper">
-    <div class="collapsible-header" onclick="togglePanel('saveToolsPanel')">
-        <span class="emoji">💾</span>
-        <span class="collapsible-title">Save Tools</span>
-        <span class="chevron" id="saveToolsChevron">›</span>
-    </div>
-
-    <div class="collapsible-content" id="saveToolsPanel">
-        <button onclick="exportAll()">Export All</button>
-        <button onclick="importAll()">Import</button>
-        <p class="panel-description">
-            Export copies localStorage to clipboard.<br>
-            Import pastes JSON to restore.
-        </p>
+<div id="tourWelcomeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 999999; display: none; justify-content: center; align-items: center;">
+    <div id="welcomeCard" style="background: var(--glass-popup); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 30px; text-align: center; width: 90%; max-width: 400px; box-shadow: var(--shadow-soft);">
+        <h2 style="margin-top: 0; color: var(--accent-color);">Welcome to v2.2!</h2>
+        <p style="color: var(--text-secondary); margin-bottom: 25px;">This update adds a powerful new dock and game tools. Would you like a quick tour?</p>
+        <button onclick="startTour()" style="background: var(--accent-color); color: white; border: none; margin-right: 15px;">Start Tour</button>
+        <button onclick="endTour(false)" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); border: 1px solid var(--glass-border);">Not Now</button>
     </div>
 </div>
 
-<!-- COLLAPSIBLE CREDITS PANEL -->
-<div class="collapsible-wrapper">
-    <div class="collapsible-header" onclick="togglePanel('creditsPanel')">
-        <span class="emoji">📜</span>
-        <span class="collapsible-title">Credits</span>
-        <span class="chevron" id="creditsChevron">›</span>
+<div id="tourOverlay" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: auto; z-index: 1000000; display: none;">
     </div>
+<div id="tourTooltip" style="position: absolute; padding: 15px; background: #000; border: 1px solid var(--accent-color); border-radius: 12px; width: 280px; text-align: left; opacity: 0; pointer-events: auto; transition: opacity 0.3s, transform 0.3s; z-index: 1000001; color: white; box-shadow: var(--shadow-soft);">
+    <p id="tourText" style="margin-bottom: 10px;"></p>
+    <div style="display: flex; justify-content: space-between;">
+        <button id="tourNextBtn" class="tour-next" style="background: var(--accent-color); color: white; border: none; padding: 6px 15px;">Next →</button>
+        <button id="tourEndBtn" onclick="endTour(true)" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); border: 1px solid var(--glass-border); display: none;">Finish</button>
+    </div>
+</div>    
+<div id="loginGate" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 999999;">
+    <div style="position: relative; z-index: 10; text-align: center; background: rgba(0,0,0,0.4); padding: 40px; border-radius: 30px; border: 1px solid rgba(255,255,255,0.1); width:90%; max-width:320px;">
+        <h2 style="margin-bottom: 20px; font-size: 24px; font-weight: 500; color:white;">Welcome</h2>
+        <input id="passwordInput" type="password" placeholder="Password" style="width:100%; margin-bottom:15px; padding:12px; border-radius:12px; border:none; background:rgba(255,255,255,0.2); color:white; text-align:center;">
+        <label style="display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 20px; color: #ccc;">
+            <span>Remember Me</span>
+            <input type="checkbox" id="rememberToggle" checked>
+        </label>
+        <button onclick="checkPassword()" style="width: 100%; background: white; color: black; font-weight: bold; padding: 12px;">Unlock</button>
+        <p id="loginError" style="margin-top: 15px; color: #ff453a; display: none;">Incorrect password</p>
+        <p id="loginLimit" style="margin-top: 15px; color: #ff453a; display: none;">Device limit reached</p>
+    </div>
+</div>
 
+<div class="collapsible-wrapper">
+    <div class="collapsible-header" onclick="toggleCredits()">
+        <svg class="icon" viewBox="0 0 24 24" style="width:20px; height:20px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+        <span>Credits</span>
+    </div>
     <div class="collapsible-content" id="creditsPanel">
-          <h2>Game Credits</h2>
+        <h3 style="margin-top:0; color:#fff;">Game Credits</h3>
+        <table style="width:100%; color:#ccc; font-size:13px; border-collapse: collapse;">
+ <tr><th>Name</th><th>Original Creator</th><th>Official Site</th></tr>
 
-  <table>
-    <tr><th>Name</th><th>Original Creator</th><th>Official Site</th></tr>
-
-    <!-- Alphabetical, full table: old + new -->
     <tr><td>1v1.lol</td><td>JustPlay.lol</td><td><a href="https://1v1.lol" target="_blank">1v1.lol</a></td></tr>
     <tr><td>12 Mini Battles</td><td>N/A</td><td>N/A</td></tr>
     <tr><td>2048</td><td>Gabriele Cirulli</td><td><a href="https://play2048.co" target="_blank">play2048.co</a></td></tr>
@@ -613,75 +740,135 @@ body {
     <tr><td>That's Not My Neighbor</td><td>N/A</td><td>N/A</td></tr>
     <tr><td>The Impossible Quiz</td><td>Splapp-me-do</td><td>N/A</td></tr>
     <tr><td>The Man From The Window</td><td>N/A</td><td>N/A</td></tr>
-    <tr><td>Temple Run 2</td><td>Imangi Studios</td><td><a href="https://www.imangistudios.com" target="_blank">imangistudios.com</a></td></tr>
-    <tr><td>Tomb of the Mask</td><td>Play365 / Next Games</td><td>N/A</td></tr>
-    <tr><td>Tunnel Rush</td><td>Devmid Games</td><td><a href="https://devmid.com" target="_blank">devmid.com</a></td></tr>
-    <tr><td>World Box</td><td>Maxim Karpenko</td><td><a href="https://www.superworldbox.com/" target="_blank">superworldbox.com</a></td></tr>
-    <tr><td>World's Hardest Game</td><td>Stephen Critoph</td><td>N/A</td></tr>
-    <tr><td>Wordle</td><td>Josh Wardle / The New York Times</td><td><a href="https://www.nytimes.com/games/wordle/index.html" target="_blank">nytimes.com/games/wordle</a></td></tr>
+    <tr><td>The Impossible Quiz</td><td>Splapp-me-do</td><td>N/A</td></tr>
 
-  </table>
-    </table>
+        </table>
     </div>
 </div>
 
-
-<div id="canvasToggleWrapper">
-    <span id="canvasSwitchLabel">Switch to Canvas</span>
-
-    <label class="canvas-switch">
-        <input type="checkbox" id="canvasToggle">
-        <span class="canvas-switch-bg"></span>
-        <span class="knob"></span>
-    </label>
+<header class="header">
+  <h1>Math Master
+    <span class="version-container">
+        <span class="version" onclick="toggleVersionInput(event)">v2.2</span>
+        
+ <div id="versionInputBubble" class="version-input-bubble" style="display:none;">
+        <div id="versionTextDisplay"
+             style="padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.15);
+                    background:rgba(255,255,255,0.05); color:white; font-weight:600;">
+           <div id="versionTextDisplay" style="padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:white; font-size:13px; line-height:1.5;">
+             <b> Version 2.2 Update Details:</b>
+<li style="margin-bottom:4px;">
+            <b>Aesthetic Standardization:</b> Reversion of the UI from the temporary **ARK Theme** to the official **Unified Glass Dashboard** visual style.
+        </li>
+        <li style="margin-bottom:4px;">
+            <b>Code Consolidation:</b> Merged all feature additions and bug fixes introduced during the ARK development cycle into the main production branch (`index.html`).
+        </li>
+        <li style="margin-bottom:4px;">
+            <b>Responsive Layout:</b> Ensured the grid and panel systems adhere to the latest responsive design standards for optimal display across all devices.
+        </li>
+        <li>
+            <b>Styling Refinement:</b> Standardized button and panel styles across the application to maintain design consistency and brand identity.
+        </li>
+    </ul>
 </div>
-<!-- === Search Bar === -->
-<div id="searchContainer">
-  <input type="text" id="searchInput" placeholder="Search games..." />
-</div>
+        </div>
+    </span>
+  </h1>
+  <p><a href="mailto:mathmasterofficialemail@gmail.com">Contact Us</a> | <a href="https://forms.gle/t4dfeHkVvirg8GfKA">Unblock Form</a></p>
+</header>
 
 <main class="container">
-  <h2>Games</h2>
   <div id="gameGrid"></div>
 
   <div class="viewer" id="viewer">
-    <button id="homeBtn" onclick="goHome()">Home</button>
+    <button id="homeBtn" onclick="goHome()">← Dashboard</button>
     <iframe id="gameFrame"></iframe>
     <div class="viewer-controls">
-      <button onclick="reloadGame()">Reload Game</button>
-      <button onclick="toggleFullscreen()">Toggle Fullscreen</button>
-      <button onclick="openInNewTab()">Open in New Tab</button>
-      
+      <button onclick="reloadGame()">Reload</button>
+      <button onclick="toggleFullscreen()">Fullscreen</button>
+      <button onclick="openInNewTab()">Open New Tab</button>
     </div>
   </div>
 </main>
-<!-- VERSION ANNOUNCEMENT POPUP -->
-<div id="announcementPopup" class="popup-overlay">
-    <div class="popup-box">
-        <h2> Introducing Version 2.1</h2>
-        <p>We've added new features and improvements to help you navigate more easily!</p>
 
-        <ul>
-            <li>Better Search Bar</li>
-            <li>New Save Tools panel</li>
-            <li>Updated Credits panel</li>
-            <li>Switch to Canvas toggle</li>
-        </ul>
-
-        <div class="popup-buttons">
-            <button id="startTourBtn">Start Tour</button>
-            <button id="closeAnnouncementBtn">Close</button>
-        </div>
+<div class="dock-container">
+    
+    <div id="spotlightSearch" class="floating-panel">
+        <input type="text" id="searchInput" placeholder="Search games..." autocomplete="off">
+        <div id="suggestions"></div>
     </div>
-</div>
 
-<!-- TOUR HIGHLIGHT OVERLAY -->
-<div id="tourOverlay" class="tour-overlay" style="display:none;">
-    <div id="tourMessage" class="tour-message"></div>
-    <button id="nextTourStep" class="tour-next">Next</button>
+    <div id="canvasPanel" class="floating-panel">
+        <span>Canvas Mode</span>
+        <label class="ios-switch">
+            <input type="checkbox" id="canvasToggleInput">
+            <span class="slider"></span>
+        </label>
+    </div>
+
+    <div id="infoPanel" class="floating-panel" style="width: 300px; padding: 20px;">
+        <h3 style="margin: 0; color: white; font-weight: 600;">Website Information</h3>
+        <p style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">This is a customizable floating information panel. Tell me what content or links you'd like to add here!</p>
+    </div>
+    <nav class="bottom-dock">
+        <button id="exportBtn" class="dock-btn" onclick="exportAll()" data-tooltip="Export Save">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        </button>
+        <button id="importBtn" class="dock-btn" onclick="importAll()" data-tooltip="Import Save">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        </button>
+        
+        <div class="dock-sep"></div>
+        
+        <button class="dock-btn" id="searchBtn" onclick="toggleSearch()" data-tooltip="Search">
+            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        </button>
+        
+        <button class="dock-btn" id="canvasBtn" onclick="toggleCanvasUI()" data-tooltip="Canvas Mode">
+            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+        </button>
+
+
+        <div class="dock-sep"></div>
+        </nav>
 </div>
 
 <script>
+    // === Version Note System ===
+function toggleVersionInput(event) {
+    const bubble = document.getElementById('versionInputBubble');
+    const textarea = document.getElementById('versionTextInput');
+    
+    // Prevent the click from propagating to the document listener
+    event.stopPropagation();
+    
+    // Close other dock popups (Search, Canvas)
+    closePopups(); 
+
+    // Toggle display
+    if (bubble.style.display === 'flex') {
+        bubble.style.display = 'none';
+    } else {
+        bubble.style.display = 'flex';
+        // Load existing note from local storage
+        const savedNote = localStorage.getItem('mathmaster_version_note');
+        textarea.value = savedNote || '';
+        textarea.focus();
+    }
+}
+
+function saveVersionNote() {
+    const textarea = document.getElementById('versionTextInput');
+    const bubble = document.getElementById('versionInputBubble');
+    
+    // Save the note to local storage
+    localStorage.setItem('mathmaster_version_note', textarea.value);
+    alert('Note Saved!');
+    bubble.style.display = 'none';
+}
+/* ================= LOGIC ================= */
+
+// === Save Tools ===
 function exportAll(){
   const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);o[k]=localStorage.getItem(k)}
   navigator.clipboard.writeText(JSON.stringify(o));alert("Data copied!");
@@ -692,55 +879,464 @@ function importAll(){
   catch(e){alert("Invalid JSON");}
 }
 
+
+// === Search System ===
+const searchBar = document.getElementById('spotlightSearch');
+const searchBtn = document.getElementById('searchBtn');
+const searchInput = document.getElementById('searchInput');
+const suggestionsEl = document.getElementById('suggestions');
+// Levenshtein Distance (needed for fuzzy scoring)
+function levenshtein(a, b) {
+  const m = [];
+  for (let i = 0; i <= b.length; i++) {
+    m[i] = [i];
+    if (i === 0)
+      for (let j = 1; j <= a.length; j++)
+        m[0][j] = j;
+  }
+
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      m[i][j] = b[j - 1] === a[i - 1]
+        ? m[i - 1][j - 1]
+        : 1 + Math.min(
+          m[i - 1][j - 1],
+          m[i][j - 1],
+          m[i - 1][j]
+        );
+    }
+  }
+  return m[b.length][a.length];
+}
+
+// Weighted AI scoring
+function scoreMatch(query, name) {
+  const q = query.toLowerCase();
+  const n = name.toLowerCase();
+  if (n.includes(q)) return 0;
+  const dist = levenshtein(q, n);
+  const prefixBonus = n.startsWith(q[0]) ? -1 : 0;
+  return dist + prefixBonus;
+}
+
+// New: Get Info Panel elements (Restored)
+const infoPanel = document.getElementById('infoPanel'); 
+const infoBtn = document.getElementById('infoBtn');     
+
+
+document.getElementById('searchInput').addEventListener('input', e => {
+  const q = e.target.value.toLowerCase();
+  const cards = [...document.querySelectorAll('#gameGrid .card')];
+  suggestionsEl.innerHTML = "";
+
+  if (!q) {
+    cards.forEach(c => c.style.display = 'block');
+    return;
+  }
+
+  // Normal filtering
+  let visible = cards.filter(c =>
+    c.querySelector('h3').textContent.toLowerCase().includes(q)
+  );
+
+  // If nothing matches → Extreme AI Guessing
+  if (visible.length === 0) {
+    const guesses = games.map(g => ({
+      name: g.name,
+      score: scoreMatch(q, g.name)
+    }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3); // top 3 suggestions
+
+    suggestionsEl.innerHTML = `
+      Did you mean:<br>
+      ${guesses.map(g => `<b>${g.name}</b>`).join("<br>")}
+    `;
+
+    const bestNames = guesses.map(g => g.name.toLowerCase());
+
+    visible = cards.filter(c =>
+      bestNames.includes(
+        c.querySelector('h3').textContent.toLowerCase()
+      )
+    );
+  }
+
+  // Display results
+  cards.forEach(c => c.style.display = 'none');
+  visible.forEach(c => c.style.display = 'block');
+});
+
+function closePopups() {
+    searchBar.classList.remove("active");
+    searchBtn.classList.remove("active-mode");
+    canvasPanel.classList.remove("active");
+    canvasBtn.classList.remove("active-mode");
+    infoPanel && infoPanel.classList.remove("active"); // Added Info Panel
+    infoBtn && infoBtn.classList.remove("active-mode");   // Added Info Panel
+}
+
+function toggleSearch() {
+    const isActive = searchBar.classList.contains("active");
+    closePopups(); // Close others first
+    
+    if (!isActive) {
+        searchBar.classList.add("active");
+        searchBtn.classList.add("active-mode");
+        searchInput.focus();
+    } else {
+        searchInput.value = "";
+        // Trigger the input event to reset filter and suggestions
+        searchInput.dispatchEvent(new Event('input')); 
+    }
+}
+
+// Info Panel Toggle Function (Restored)
+function toggleInfoUI() {
+    const isActive = infoPanel.classList.contains("active");
+    closePopups(); // Close others first
+    
+    if (!isActive) {
+        infoPanel.classList.add("active");
+        infoBtn.classList.add("active-mode");
+    }
+}
+// END RESTORED
+
+// === Canvas System (UI & Logic) ===
+const canvasToggleInput = document.getElementById("canvasToggleInput");
+let isCanvasMode = localStorage.getItem("mathmaster_canvas_mode") === "true";
+
+// Initialize Toggle State
+canvasToggleInput.checked = isCanvasMode;
+applyCanvasMode();
+
+function toggleCanvasUI() {
+    const isActive = canvasPanel.classList.contains("active");
+    closePopups(); // Close others first
+    
+    if (!isActive) {
+        canvasPanel.classList.add("active");
+        canvasBtn.classList.add("active-mode");
+    }
+}
+
+// Listener for the switch inside the popup
+canvasToggleInput.addEventListener('change', (e) => {
+    isCanvasMode = e.target.checked;
+    localStorage.setItem("mathmaster_canvas_mode", isCanvasMode);
+    applyCanvasMode();
+});
+
+function applyCanvasMode() {
+    if (isCanvasMode) {
+        document.title = "Dashboard"; // Disguise Name
+        changeFavicon("Assets/Pictures/Non-edited/canvas-n.png");
+    } else {
+        document.title = "Math Master.org"; // Real Name
+        changeFavicon("Assets/Pictures/Non-edited/Math-n.png");
+    }
+}
+
+function changeFavicon(src) {
+    const oldLink = document.getElementById("favicon");
+    if (oldLink) oldLink.remove();
+    
+    const newLink = document.createElement("link");
+    newLink.id = "favicon";
+    newLink.rel = "icon";
+    newLink.href = src;
+    document.head.appendChild(newLink);
+}
+
+document.addEventListener('click', (e) => {
+    const isDock = e.target.closest('.dock-container');
+    const isTour = e.target.closest('#tourWelcomeModal') || e.target.closest('#tourTooltip');
+    const isVersion = e.target.closest('.version-container'); // NEW: check if click is inside version area
+
+    // Close dock popups
+    if (!isDock && !isTour) closePopups();
+
+    // NEW: Close version note bubble if click is outside the version area
+    if (!isVersion) {
+        const bubble = document.getElementById('versionInputBubble');
+        if (bubble && bubble.style.display === 'flex') {
+            bubble.style.display = 'none';
+        }
+    }
+});
+// Real-time Filtering
+searchInput.addEventListener('input', e => filterGames(e.target.value));
+function filterGames(query) {
+  const q = query.toLowerCase().trim();
+  const cards = [...document.querySelectorAll('#gameGrid .card')];
+  suggestionsEl.innerHTML = "";
+
+  if (!q) {
+    cards.forEach(c => c.style.display = 'block');
+    return;
+  }
+
+  let visible = cards.filter(c =>
+    c.querySelector('h3').textContent.toLowerCase().includes(q)
+  );
+
+  // Fuzzy guessing only if no direct matches
+  if (visible.length === 0 && typeof games !== "undefined") {
+
+    const guesses = games.map(g => ({
+      name: g.name,
+      score: scoreMatch(q, g.name)
+    }))
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3);
+
+    suggestionsEl.innerHTML =
+      "Did you mean:<br>" +
+      guesses.map(g => `<b>${g.name}</b>`).join("<br>");
+
+    const best = guesses.map(g => g.name.toLowerCase());
+
+    visible = cards.filter(c =>
+      best.includes(c.querySelector('h3').textContent.toLowerCase())
+    );
+  }
+
+  cards.forEach(c => c.style.display = 'none');
+  visible.forEach(c => c.style.display = 'block');
+}
+
+
+
+// === NEW: FIRST-TIME TOUR LOGIC (CORRECTED) ===
+const tourWelcomeModal = document.getElementById('tourWelcomeModal');
+const tourOverlay = document.getElementById('tourOverlay');
+const tourTooltip = document.getElementById('tourTooltip');
+const tourTextEl = document.getElementById('tourText');
+const tourNextBtn = document.getElementById('tourNextBtn');
+const tourEndBtn = document.getElementById('tourEndBtn');
+tourNextBtn.addEventListener("click", nextTourStep);
+
+let currentStep = 0;
+
+const tourSteps = [
+    {
+        element: 'h1 .version', // Targets the version number span
+        text: 'This is the **Version Number (v2.2)**, check here for update information!',
+        position: 'bottom', // Tooltip appears below
+        adjust: {y: 10, x: 0}
+    },
+    {
+        element: '.header p a:nth-child(2)', // Unblock Form link
+        text: 'The **Unblock Form** is a way to request access if the site is blocked.',
+        position: 'bottom',
+        adjust: {y: 10, x: 0}
+    },
+    {
+        element: '.header p a:nth-child(1)', // Contact Us link
+        text: 'The **Contact Us** link is where you can send a message, primarily for **Game Requests**!',
+        position: 'bottom',
+        adjust: {y: 10, x: 0}
+    },
+    {
+        element: '.collapsible-header', // Credits button
+        text: 'This is the **Credits Panel**. Click it to see the original creators of the games.',
+        position: 'left',
+        adjust: {y: 0, x: -10}
+    },
+
+    // --- NEW: Export & Import steps inserted right before the Search step ---
+    {
+        element: '#exportBtn',
+        text: 'This is the **Export Save** button — use it to copy your saved data to the clipboard.',
+        position: 'top',
+        adjust: {y: -10, x: 0}
+    },
+    {
+        element: '#importBtn',
+        text: 'This is the **Import Save** button — paste previously exported JSON here to restore saves.',
+        position: 'top',
+        adjust: {y: -10, x: 0}
+    },
+    // --- end inserted steps ---
+
+    {
+        element: '#searchBtn', // Search button
+        text: 'This is the **Search** button. It opens a quick search bar above the dock.',
+        position: 'top',
+        adjust: {y: -10, x: 0}
+    },
+    {
+        element: '#canvasBtn', // Canvas button
+        text: 'This is **Canvas Mode**. Click it to toggle the site’s secret disguise.',
+        position: 'top',
+        adjust: {y: -10, x: 0}
+    },
+    {
+        element: '#infoBtn', // Info button
+        text: 'This is the **Information** panel. It can be customized with important links or messages. This is the last step!',
+        position: 'top',
+        adjust: {y: -10, x: 0}
+    }
+];
+
+function startTour() {
+    tourWelcomeModal.style.display = 'none';
+    tourOverlay.style.display = 'block';
+    currentStep = 0;
+    showTourStep(currentStep);
+}
+
+function nextTourStep() {
+    if (currentStep < tourSteps.length - 1) {
+        currentStep++;
+        showTourStep(currentStep);
+    } else {
+        // If it was the last step, end the tour.
+        endTour(true);
+    }
+}
+
+function endTour(completed) {
+    // This key ensures the welcome modal never shows again.
+    localStorage.setItem("mathmaster_tour_completed", "true");
+    
+    // Clean up tour elements
+    tourWelcomeModal.style.display = 'none';
+    tourOverlay.style.display = 'none';
+    tourTooltip.style.opacity = '0';
+    
+    // Remove the highlight box
+    const highlight = document.querySelector('.tour-highlight');
+    if (highlight) highlight.remove();
+
+    if (completed) {
+        // Optional: show a quick success message after the tour
+        // alert("Tour complete! Enjoy the new features!");
+    }
+}
+
+function showTourStep(stepIndex) {
+    const step = tourSteps[stepIndex];
+    const targetElement = document.querySelector(step.element);
+
+    if (!targetElement) {
+        console.error(`Tour element not found for step ${stepIndex}: ${step.element}`);
+        nextTourStep(); // Skip missing step
+        return;
+    }
+    
+    // 1. Update Tooltip Content and Buttons
+    tourTextEl.innerHTML = step.text;
+    if (stepIndex === tourSteps.length - 1) {
+        tourNextBtn.style.display = 'none';
+        tourEndBtn.style.display = 'block';
+    } else {
+        tourNextBtn.style.display = 'block';
+        tourEndBtn.style.display = 'none';
+    }
+
+    // 2. Scroll to the element and prepare the highlight
+    targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    // Use a short delay to allow scrolling/transition to finish before measuring
+    setTimeout(() => {
+        const rect = targetElement.getBoundingClientRect();
+        let highlight = document.querySelector('.tour-highlight');
+        if (!highlight) {
+            highlight = document.createElement('div');
+            highlight.className = 'tour-highlight';
+            tourOverlay.appendChild(highlight);
+        }
+
+        // Adjust highlight size/position (fixed to current scroll position)
+        highlight.style.width = `${rect.width + 10}px`;
+        highlight.style.height = `${rect.height + 10}px`;
+        highlight.style.top = `${rect.top + window.scrollY - 5}px`;
+        highlight.style.left = `${rect.left + window.scrollX - 5}px`;
+        
+        // 3. Position Tooltip
+        let tooltipX, tooltipY;
+
+        // Calculate default position relative to the center of the highlight
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+        
+        switch (step.position) {
+            case 'top':
+                tooltipX = centerX - tourTooltip.offsetWidth / 2;
+                tooltipY = rect.top - tourTooltip.offsetHeight - 15 + (step.adjust.y || 0); 
+                break;
+            case 'bottom':
+                tooltipX = centerX - tourTooltip.offsetWidth / 2;
+                tooltipY = rect.bottom + 15 + (step.adjust.y || 0); 
+                break;
+            case 'left':
+                tooltipX = rect.left - tourTooltip.offsetWidth - 15 + (step.adjust.x || 0);
+                tooltipY = centerY - tourTooltip.offsetHeight / 2;
+                break;
+            case 'right':
+                tooltipX = rect.right + 15 + (step.adjust.x || 0);
+                tooltipY = centerY - tourTooltip.offsetHeight / 2;
+                break;
+            default: 
+                tooltipX = centerX - tourTooltip.offsetWidth / 2;
+                tooltipY = rect.bottom + 15;
+        }
+        
+        // Simple screen boundary check (left/right)
+        if (tooltipX < 10) tooltipX = 10;
+        if (tooltipX + tourTooltip.offsetWidth > window.innerWidth - 10) {
+            tooltipX = window.innerWidth - tourTooltip.offsetWidth - 10;
+        }
+        
+        // Set final, visible position (relative to document/scroll)
+        tourTooltip.style.left = `${tooltipX + window.scrollX}px`;
+        tourTooltip.style.top = `${tooltipY + window.scrollY}px`;
+        tourTooltip.style.opacity = '1';
+        
+    }, 400); 
+}
+// === END NEW TOUR LOGIC ===
+
+
+// === Game Loading ===
 const frame=document.getElementById("gameFrame");
 const viewer=document.getElementById("viewer");
 const grid=document.getElementById("gameGrid");
 let currentSrc="";
 
 function loadGame(p){
-  currentSrc=p;
-  frame.src=p;
-  grid.style.display="none";
-  viewer.style.display="flex";
+  currentSrc=p; frame.src=p;
+  grid.style.display="none"; viewer.style.display="flex";
+  document.querySelector('.dock-container').style.transform = "translate(-50%, 200%)"; // Hide dock
   window.scrollTo({top:viewer.offsetTop-20,behavior:"smooth"});
 }
 function goHome() {
-    // 1. Exit fullscreen first
-    if (document.fullscreenElement) {
-        document.exitFullscreen().finally(() => {
-            returnToHomeScreen();
-        });
-    } else {
-        returnToHomeScreen();
-    }
-}
-function returnToHomeScreen() {
-
-    // Restore your original home behavior
+    if (document.fullscreenElement) document.exitFullscreen();
     viewer.style.display = "none";
     grid.style.display = "grid";
     frame.src = "";
-    window.scrollTo({top: 0, behavior: "smooth"});
+    document.querySelector('.dock-container').style.transform = "translateX(-50%)"; // Show dock
 }
-
 function reloadGame(){if(currentSrc)frame.src=currentSrc;}
 function toggleFullscreen(){if(!document.fullscreenElement){viewer.requestFullscreen();}else{document.exitFullscreen();}}
 function openInNewTab(){if(currentSrc)window.open(currentSrc,"_blank");}
+function toggleCredits() {
+    const p = document.getElementById("creditsPanel");
+    p.style.display = (p.style.display === "block") ? "none" : "block";
+}
 
+// === Games List (Omitted for brevity, assumed unchanged) ===
 
-
-/* === GAME LIST === */
 const games = [
-  {name:"Chatbot", path:"https://atlasstudypartners-chatbot.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true},
+    // ... (Your game list here) ... 
+  {name:"Chatbot", path:"https://personalfriend.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true},
   {name:"Love Meter", path:"Assets/Game Data/love_meter (2).html", logo:"Assets/Pictures/Edited/LoveMeter-ed.png"},
-
   {name:"12 Mini Battles", path:"Assets/Game Data/12 Mini Battles.html", logo:"Assets/Pictures/Non-edited/12MiniBattles-n.png"},
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
-
   {name:"Among Us", path:"Assets/Game Data/among-us/index.html", logo:"Assets/Pictures/Non-edited/AmongUs-n.png"},
-
- 
   {name:"Backrooms", path:"Assets/Game Data/backrooms/index.html", logo:"Assets/Pictures/Non-edited/Backrooms-n.jfif"},
   {name:"Bad Ice Cream", path:"Assets/Game Data/bad-ice-cream/index.html", logo:"Assets/Pictures/Non-edited/BadIceCream-n.png"},
   {name:"Baldis Basics", path:"Assets/Game Data/baldis-basics/index.html", logo:"Assets/Pictures/Non-edited/BaldiBasics-n.png"},
@@ -758,21 +1354,21 @@ const games = [
    {name:'Chess', path:'Assets/Game Data/chess/index.html', logo:'Assets/Pictures/Non-edited/Chess-n.png'},
   {name:'Chrome Dino', path:'Assets/Game Data/chromedino/index.html', logo:'Assets/Pictures/Non-edited/DinosaurGame-n.png'},
   {name:"Drive Mad", path:"Assets/Game Data/drive-mad/index.html", logo:"Assets/Pictures/Non-edited/DriveMad-n.jpg"},
-  {name:"Drift Boss", path:"Assets/Game Data/Drift Boss.html", logo:"Assets/Pictures/Non-edited/DriftBoss-n.png"},
   {name:"Duck Life 4", path:"Assets/Game Data/ducklife4/index.html", logo:"Assets/Pictures/Non-edited/DuckLife4-n.jpg"},
    {name:'Doodle Jump', path:'Assets/Game Data/doodlejump/index.html', logo:'Assets/Pictures/Non-edited/DoodleJump-n.png'},
   {name:"Five Nights at Freddys", path:"Assets/Game Data/Five Nights at Freddys.html", logo:"Assets/Pictures/Non-edited/FNAF-n.png"},
   {name:"Five Nights at Freddys 2", path:"Assets/Game Data/Five Nights at Freddys 2.html", logo:"Assets/Pictures/Non-edited/FNAF2-n.png"},
   {name:"Five Nights at Freddys 3", path:"Assets/Game Data/Five Nights at Freddys 3.html", logo:"Assets/Pictures/Non-edited/FNAF3-n.png"},
   {name:"Five Nights at Freddys 4", path:"Assets/Game Data/Five Nights at Freddys 4.html", logo:"Assets/Pictures/Non-edited/FNAF4-n.png"},
-  
+  {name: "Free Rider Jumps", path: "Assets/Game Data/free_rider_jumps/index.html", logo: "Assets/Pictures/Non-edited/Free-n.webp"},
   {name:"Fruit Ninja", path:"Assets/Game Data/fruitninja/index.html", logo:"Assets/Pictures/Non-edited/FruitNinja-n.jpg"},
    {name:'Flappy Bird', path:'Assets/Game Data/flappybird/index.html', logo:'Assets/Pictures/Non-edited/FlappyBird-n.webp'},
- 
+  {name: 'Friday Night Funkin (For Jacob)', path: 'Assets/Game Data/Friday Night Funkin.html', logo: 'Assets/Pictures/Non-edited/Friday-n.png'},
    {name:'Geometry Dash', path:'Assets/Game Data/geometrydash/index.html', logo:'Assets/Pictures/Non-edited/GeometryDash-n.jpg'},
+   {name:"Gobble", path:'Assets/Game Data/Gobble.html', logo:"Assets/Pictures/Non-edited/Gobble-n.png"},
   {name:"Granny", path:"Assets/Game Data/Granny.html", logo:"Assets/Pictures/Non-edited/Granny-n.png"},
    {name:'Idle Breakout', path:'Assets/Game Data/idle-breakout-main/idle-breakout-main/game.html', logo:'Assets/Pictures/Non-edited/IdleBreakout-n.png'},
-  {name:"Minecraft", path:"Assets/Game Data/Minecraft 1.8.8.html", logo:"Assets/Pictures/Non-edited/Minecraft-n.png"},
+  {name:"Minecraft", path:"Assets/Game Data/Minecraft 1.8.8.html", logo:"Assets/Pictures/Non-edited/Minecraft-n.png",external:true},
   {name:"Moto X3M 2", path:"Assets/Game Data/motox3m2/index.html", logo:"Assets/Pictures/Non-edited/Motox3m2-n.webp"},
   {name:"Moto X3M 3", path:"Assets/Game Data/Moto X3M 3.html", logo:"Assets/Pictures/Non-edited/Motox3m3-n.png"},
   {name:"Moto X3M Pool Party", path:"Assets/Game Data/motox3m-pool/index.html", logo:"Assets/Pictures/Non-edited/Motox3mPool-n.jpg"},
@@ -781,237 +1377,98 @@ const games = [
    {name:'Ovo', path:'Assets/Game Data/ovo/index.html', logo:'Assets/Pictures/Non-edited/ovo-n.png'},
   {name:"Paper io 2", path:"Assets/Game Data/paperio2/index.html", logo:"Assets/Pictures/Non-edited/Paperio2-n.png"},
   {name:"Plants Vs Zombies", path:"Assets/Game Data/Plants vs Zombies.html", logo:"Assets/Pictures/Non-edited/PlantsVsZombies-n.png"},
+  {name: "Poly Track", path: "Assets/Game Data/poly-track/index.html", logo: "Assets/Pictures/Non-edited/Poly-n.png"},
   {name:"Red Ball 4", path:"Assets/Game Data/Red Ball 4.html", logo:"Assets/Pictures/Non-edited/RedBall4-n.png"},
   {name:"Red Ball 4 Vol. 2", path:"Assets/Game Data/Red Ball 4 Vol. 2.html", logo:"Assets/Pictures/Non-edited/RedBall4-2-n.png"},
   {name:"Red Ball 4 Vol. 3", path:"Assets/Game Data/Red Ball 4 Vol. 3.html", logo:"Assets/Pictures/Non-edited/RedBall4-3-n.png"},
   {name:"Retro Bowl", path:"Assets/Game Data/bowl/index.html", logo:"Assets/Pictures/Non-edited/Retrobowl-n.png"},
- 
   {name:"Rooftop Snipers", path:"Assets/Game Data/rooftop-snipers/index.html", logo:"Assets/Pictures/Non-edited/RooftopSnipers-n.png"},
   {name:"Run", path:"Assets/Game Data/Run 1.html", logo:" Assets/Pictures/Non-edited/Run1-n.png"},
   {name: "Run 2", path: "Assets/Game Data/Run 2.html", logo: "Assets/Pictures/Non-edited/Run-2-n.png"},
   {name:"Run 3", path:"Assets/Game Data/Run 3.html", logo:"Assets/Pictures/Non-edited/Run3-n.png"},
  {name: "Soccer Random", path: "Assets/Game Data/Soccer-Random/index.html", logo: "Assets/Pictures/Non-edited/SoccerRandom-n.jpg"},
+ {name: "Soundboard", path: "Assets/Game Data/soundboard/index.html", logo: "Assets/Pictures/Non-edited/Soundboard-n.png"},
   {name:'Slope', path:'Assets/Game Data/Slope-Game-main/Slope-Game-main/index.html', logo:'Assets/Pictures/Non-edited/Slope-n.png'},
   {name:"Slope 2", path:"Assets/Game Data/Slope 2.html", logo:"Assets/Pictures/Non-edited/Slope2-n.png"},
- 
   {name:"Solar Smash", path:"Assets/Game Data/Solar Smash.html", logo:"Assets/Pictures/Non-edited/SolarSmash-n.png"},
- 
- 
   {name:"Station Saturn", path:"Assets/Game Data/Station Saturn.html", logo:"Assets/Pictures/Non-edited/StationSaturn-n.png"},
   {name:"Steal A Brainrot", path:"Assets/Game Data/Steal A Brainrot.html", logo:"Assets/Pictures/Non-edited/StealABrainrot-n.png"},
+  {name:"Stickman Hook", path:"Assets/Game Data/stickman-hook/index.html", logo:"Assets/Pictures/Non-edited/Stickman-n.png"},
   {name:"Temple Run 2", path:"Assets/Game Data/Temple Run 2.html", logo:"Assets/Pictures/Non-edited/TempleRun2-n.png"},
  {name:"Space Invaders", path:'Assets/Game Data/spaceinvaders/index.html', logo:'Assets/Pictures/Non-edited/SpaceInvaders-n.png'},
- {name:"Thats Not My Neighbor", path: 'Assets/Game Data/Thats Not My Neighbor.html', logo:"Assets/Pictures/Non-edited/ThatsNotMyNeighbor-n.png"},
- {name:"Tunnel Rush", path: "Assets/Game Data/tunnel-rush/index.html", logo: "Assets/Pictures/Non-edited/TunnelRush-n.jpg"},
+ {name:"Thats Not My Neighbor", path: 'Assets/Game Data/Thats Not My Neighbor.html', logo:"Assets/Pictures/Non-edited/ThatsNotMyNeighbor-n.png",external:true},
+ {name:"Tunnel Rush", path: "Assets/Game Data/tunnelrush/index.html", logo: "Assets/Pictures/Non-edited/TunnelRush-n.jpg"},
  {name:"The Impossible Quiz", path:"Assets/Game Data/the-impossible-quiz/index.html", logo:"Assets/Pictures/Non-edited/ImpossibleQuiz-n.webp"},
   {name:"The Man In The Window", path:"Assets/Game Data/The Man In The Window.html", logo:"Assets/Pictures/Non-edited/ManFromWindow-n.png"},
   {name:"Tomb of the Mask", path:"Assets/Game Data/Tomb Of The Mask.html", logo:"Assets/Pictures/Non-edited/TombOfMask-n.png"},
   {name:"Volleyball Random", path:"Assets/Game Data/Volley-Random/index.html", logo:"Assets/Pictures/Non-edited/VolleyRandom-n.webp"},
   {name:"Wordle", path:"Assets/Game Data/wordle/index.html", logo:"Assets/Pictures/Non-edited/Wordle-n.png"},
-  {name:"World Box", path:"Assets/Game Data/World Box.html", logo:"Assets/Pictures/Non-edited/WorldBox-n.png"},
   {name:"Worlds Hardest Game", path:"Assets/Game Data/worlds-hardest-game/index.html", logo:"Assets/Pictures/Non-edited/WorldHardestGame-n.jpeg"}
 ];
+
 const gridEl=document.getElementById("gameGrid");
 gridEl.innerHTML="";
 for(const g of games){
  const c=document.createElement("div");
  c.className="card";
  c.innerHTML=`<img src="${g.logo}"><h3>${g.name}</h3>`;
- if(g.external){
-   c.innerHTML+=`<button class="btn" onclick="window.open('${g.path}','_blank')">Open</button>`;
- } else {
-   c.innerHTML+=`<button class="btn" onclick="loadGame('${g.path}')">Load</button>`;
- }
+ c.innerHTML+= g.external 
+   ? `<button class="btn" onclick="window.open('${g.path}','_blank')">Open</button>`
+   : `<button class="btn" onclick="loadGame('${g.path}')">Play</button>`;
  gridEl.appendChild(c);
 }
 
-(function(){
-  const saveToggle = document.getElementById('saveToggle');
-  const savePanel = document.getElementById('savePanel');
-  const creditsPanel = document.getElementById('creditsPanel'); // if you have it
+// === Login System ===
+const PASSWORD = "YourMom67";
+const MAX_DEVICES = 10;
+const DEVICE_KEY = "mathmaster_device_id";
+const MASTER_LIST_KEY = "mathmaster_registered_devices";
 
-  if(!saveToggle || !savePanel) return;
-
-  function setSaveState(open) {
-    if(open) {
-      savePanel.classList.add('active');
-      savePanel.setAttribute('aria-hidden','false');
-      saveToggle.textContent = 'Hide Save Tools';
-      saveToggle.setAttribute('aria-expanded','true');
-      // hide credits if open to prevent overlap
-      if(creditsPanel && creditsPanel.classList.contains('active')) {
-        creditsPanel.classList.remove('active');
-        const cToggle = document.getElementById('creditsToggle');
-        if(cToggle) cToggle.textContent = 'Show Credits';
-      }
-    } else {
-      savePanel.classList.remove('active');
-      savePanel.setAttribute('aria-hidden','true');
-      saveToggle.textContent = 'Show Save Tools';
-      saveToggle.setAttribute('aria-expanded','false');
+window.onload = function() {
+    const gate = document.getElementById("loginGate");
+    let deviceId = localStorage.getItem(DEVICE_KEY);
+    let list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
+    
+    // Check Login Gate first
+    if (deviceId && list.includes(deviceId)) {
+        gate.style.display = "none";
+        
+        // After successful login, check if the tour has been completed
+        if (localStorage.getItem("mathmaster_tour_completed") !== "true") {
+            // Wait a moment for the rest of the page to load/render before showing the modal
+            setTimeout(() => {
+                tourWelcomeModal.style.display = "flex";
+            }, 500); 
+        }
     }
-  }
-
-  // Restore previous state (optional)
-  const prev = sessionStorage.getItem('asp_savepanel_open');
-  if(prev === '1') setSaveState(true);
-
-  saveToggle.addEventListener('click', ()=>{
-    const isOpen = savePanel.classList.contains('active');
-    setSaveState(!isOpen);
-    sessionStorage.setItem('asp_savepanel_open', (!isOpen) ? '1' : '0');
-  });
-})();
-
-
-// === Game Search Functionality ===
-document.addEventListener("DOMContentLoaded", () => {
-  const searchInput = document.getElementById('searchInput');
-  const gameCards = document.querySelectorAll('#gameGrid .card, #games .game-card');
-
-  if (searchInput) {
-    searchInput.addEventListener('input', function() {
-      const query = this.value.toLowerCase();
-      gameCards.forEach(card => {
-        const name = card.querySelector('h3')?.textContent.toLowerCase() || '';
-        card.style.display = name.includes(query) ? 'block' : 'none';
-      });
-    });
-  }
-});
-
-
-const toggle = document.getElementById("canvasToggle");
-
-const defaultTitle = document.title;
-const defaultFavicon = document.querySelector("link[rel='icon']")?.href;
-const canvasIcon = "Assets/Pictures/Non-edited/canvas-n.png";
-
-toggle.addEventListener("change", () => {
-    const bg = toggle.parentElement.querySelector(".canvas-switch-bg");
-
-    // Change switch color
-    if (toggle.checked) {
-        bg.style.background = "#2ecc71";
-        document.title = "Dashboard";
-        changeFavicon(canvasIcon);
-    } else {
-        bg.style.background = "#777";
-        document.title = defaultTitle;
-        changeFavicon(defaultFavicon);
-    }
-});
-
-function changeFavicon(src) {
-    let link = document.querySelector("link[rel='icon']");
-    if (!link) {
-        link = document.createElement("link");
-        link.rel = "icon";
-        document.head.appendChild(link);
-    }
-    link.href = src;
-}
-function togglePanel(id) {
-    const panel = document.getElementById(id);
-    const chevron = document.getElementById(id === "saveToolsPanel" ? "saveToolsChevron" : "creditsChevron");
-
-    if (panel.style.display === "block") {
-        panel.style.display = "none";
-        chevron.style.transform = "rotate(0deg)";
-    } else {
-        panel.style.display = "block";
-        chevron.style.transform = "rotate(90deg)";
-    }
-}
-// Show announcement only first time
-window.addEventListener("load", () => {
-    if (!localStorage.getItem("hasSeenAnnouncement")) {
-        document.getElementById("announcementPopup").style.display = "flex";
-    }
-});
-
-// Close announcement
-document.getElementById("closeAnnouncementBtn").onclick = () => {
-    document.getElementById("announcementPopup").style.display = "none";
-    localStorage.setItem("hasSeenAnnouncement", "true");
 };
 
-// Start tour
-document.getElementById("startTourBtn").onclick = () => {
-    document.getElementById("announcementPopup").style.display = "none";
-    localStorage.setItem("hasSeenAnnouncement", "true");
-    startTour();
-};
+function checkPassword() {
+    const input = document.getElementById("passwordInput").value;
+    const remember = document.getElementById("rememberToggle").checked;
+    const error = document.getElementById("loginError");
+    const limit = document.getElementById("loginLimit");
+    error.style.display = "none"; limit.style.display = "none";
 
+    if (input !== PASSWORD) { error.style.display = "block"; return; }
+    if (!remember) { document.getElementById("loginGate").style.display = "none"; return; }
 
-// ----------- TOUR SYSTEM -------------
-
-let step = 0;
-
-const tourSteps = [
-    {
-        selector: "#searchInput",
-        message: "This is the search bar! Use it to find any game instantly."
-    },
-    {
-        selector: ".collapsible-wrapper:nth-of-type(1)",
-        message: "Here are the Save Tools! Export or import your saved data anytime."
-    },
-    {
-        selector: ".collapsible-wrapper:nth-of-type(2)",
-        message: "This collapsible shows the full Credits list for all games."
-    },
-    {
-        selector: "#canvasToggleWrapper",
-        message: "This button switches between Dashboard and Canvas mode!"
+    let list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
+    if (list.length >= MAX_DEVICES) { limit.style.display = "block"; return; }
+    
+    const newId = crypto.randomUUID();
+    list.push(newId);
+    localStorage.setItem(DEVICE_KEY, newId);
+    localStorage.setItem(MASTER_LIST_KEY, JSON.stringify(list));
+    document.getElementById("loginGate").style.display = "none";
+    
+    // After login, show the tour for the first time
+    if (localStorage.getItem("mathmaster_tour_completed") !== "true") {
+        setTimeout(() => {
+            tourWelcomeModal.style.display = "flex";
+        }, 500); 
     }
-];
-
-function startTour() {
-    step = 0;
-    document.getElementById("tourOverlay").style.display = "block";
-    showStep();
 }
-
-function showStep() {
-    const stepInfo = tourSteps[step];
-    const element = document.querySelector(stepInfo.selector);
-    const messageBox = document.getElementById("tourMessage");
-
-    if (!element) return;
-
-    const rect = element.getBoundingClientRect();
-
-    messageBox.textContent = stepInfo.message;
-
-    messageBox.style.top = (rect.top - 70) + "px";
-    messageBox.style.left = (rect.left) + "px";
-
-    element.style.outline = "3px solid #00ffe1";
-    element.style.outlineOffset = "4px";
-
-    setTimeout(() => {
-        element.style.transition = "outline 0.3s ease";
-    }, 10);
-}
-
-document.getElementById("nextTourStep").onclick = () => {
-    const currentSelector = tourSteps[step].selector;
-    const element = document.querySelector(currentSelector);
-
-    // remove highlight
-    if (element) element.style.outline = "none";
-
-    step++;
-
-    if (step >= tourSteps.length) {
-        document.getElementById("tourOverlay").style.display = "none";
-        return;
-    }
-
-    showStep();
-};
-
 </script>
 </body>
 </html>

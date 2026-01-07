@@ -14,21 +14,66 @@
 </head>
 
 <body>
-    <div style="display: inline-block; -webkit-user-select: none; text-align: left">
-        <canvas id="MMFCanvas" width="1280" height="720"> Your browser does not support Canvas, Please try again. </canvas>
+<body>
+
+<div id="canvas-wrapper">
+    <canvas id="MMFCanvas" width="1000" height="720"></canvas>
+</div>
+
+<div id="progress-container">
+    <div style="margin-bottom: 6px;">Downloading... <span id="download-text">0%</span></div>
+    <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
+        <div id="download-bar" style="height: 10px; background: #3b82f6; width: 0%; transition: width 0.2s;"></div>
     </div>
-    <div id="progress-container">
-        <div style="margin-bottom: 6px;">Downloading... <span id="download-text">0%</span></div>
-        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
-            <div id="download-bar" style="height: 10px; background: #3b82f6; width: 0%; transition: width 0.2s;"></div>
-        </div>
-        <div style="margin: 12px 0 6px;">Extracting... <span id="extract-text">0%</span></div>
-        <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
-            <div id="extract-bar" style="height: 10px; background: #10b981; width: 0%; transition: width 0.2s;"></div>
-        </div>
+    <div style="margin: 12px 0 6px;">Extracting... <span id="extract-text">0%</span></div>
+    <div style="width: 100%; background: #444; border-radius: 6px; overflow: hidden;">
+        <div id="extract-bar" style="height: 10px; background: #10b981; width: 0%; transition: width 0.2s;"></div>
     </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-    <script src="main.js"></script>
+</div>
+
+<script>
+
+
+(function(){
+  const canvas = document.getElementById("MMFCanvas");
+  if (!canvas) {
+    console.error("MMFCanvas not found.");
+    return;
+  }
+
+  // --- Create wrapper if not already present ---
+  let wrapper = canvas.parentElement;
+  if (!wrapper || wrapper.id !== "canvas-wrapper") {
+    wrapper = document.createElement("div");
+    wrapper.id = "canvas-wrapper";
+
+    Object.assign(wrapper.style, {
+      position: "fixed",
+      top: "50%",
+      left: "50%",
+     transform : "translate(-50%, -50%) scale(5)",
+
+      transformOrigin: "top left",
+      width: "max-content",
+      height: "max-content",
+      zIndex: 9999
+    });
+
+    const parent = canvas.parentNode;
+    parent.insertBefore(wrapper, canvas);
+    wrapper.appendChild(canvas);
+  }
+
+  // If wrapper exists, just ensure centering is correct
+  wrapper.style.transform = "translate(-50%, -50%)";
+})();
+</script>
+
+</script>
+
+
+</script>
+
 </body>
 
 </html>

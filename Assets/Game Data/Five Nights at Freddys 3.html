@@ -1,6 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 
+<style>
+/* KEEP ONLY the real Fusion elements inside the wrapper */
+#MMFCanvasDiv > *:not(#MMFCanvas):not(#loader) {
+    display: none !important;
+}
+
+/* Hide any extra canvases except the real one */
+canvas:not(#MMFCanvas) {
+    display: none !important;
+}
+
+
+/* Make sure Fusion loader + game display correctly */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #000 !important;
+}
+</style>
+
 <head>
 	<base href="https://cdn.jsdelivr.net/gh/genizy/fnaf@latest/3/">
     <link rel="stylesheet" type="text/css" href="style.css"/>
@@ -15,7 +36,7 @@
 
 <body>
     <div style="display: inline-block; -webkit-user-select: none; text-align: left">
-        <canvas id="MMFCanvas" width="1280" height="720"> Your browser does not support Canvas, Please try again. </canvas>
+        <canvas id="MMFCanvas" width="1900" height="750"> Your browser does not support Canvas, Please try again. </canvas>
     </div>
     <div id="progress-container">
         <div style="margin-bottom: 6px;">Downloading... <span id="download-text">0%</span></div>

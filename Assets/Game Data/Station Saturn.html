@@ -1,6 +1,51 @@
 <!DOCTYPE html>
 <base href="https://rawcdn.githack.com/bubbls/UGS-Assets/8270f39794953f1418b8117f254fd6d262407bb8/station%20saturn/">
 <html lang="en-us">
+<style>
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #000 !important;
+    width: 100%;
+    height: 100%;
+}
+
+#unity-container {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw !important;
+    height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+#unity-canvas {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: absolute !important;
+    top: 0;
+    left: 0;
+    background: #000;
+}
+
+#unity-footer,
+#unity-loading-bar,
+#unity-progress-bar-empty,
+#unity-progress-bar-full,
+#unity-logo {
+    position: absolute !important;
+    bottom: 20px;
+    width: 100%;
+    left: 0;
+}
+
+/* Optional: remove Unity footer */
+#unity-footer {
+    display: none !important;
+}
+</style>
 
 <head>
   <meta charset="utf-8">
@@ -118,6 +163,24 @@
     };
     document.body.appendChild(script);
   </script>
+  <script>
+document.addEventListener("DOMContentLoaded", () => {
+    function autoFS() {
+        try {
+            if (typeof unityInstance !== "undefined") {
+                unityInstance.SetFullscreen(1);
+            }
+        } catch(e) {}
+
+        document.removeEventListener("click", autoFS);
+        document.removeEventListener("touchstart", autoFS);
+    }
+
+    document.addEventListener("click", autoFS);
+    document.addEventListener("touchstart", autoFS);
+});
+</script>
+
 </body>
 
 </html>
