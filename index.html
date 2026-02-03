@@ -511,6 +511,8 @@ input:checked + .slider:before { transform: translateX(22px); }
 
 
 
+
+
 /* === Login Gate & Tour === */
 #loginGate, #tourWelcomeModal { 
     background-image: url('https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?q=80&w=2564&auto=format&fit=crop') !important; 
@@ -625,10 +627,12 @@ input:checked + .slider:before { transform: translateX(22px); }
 </style>
 </head>
 <body>
+<!-- Hidden file input (paste once in <body>) -->
+<input type="file" id="saveFileInput" accept=".json,.save,application/json" style="display:none" />
 
 <div id="tourWelcomeModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(5px); z-index: 999999; display: none; justify-content: center; align-items: center;">
     <div id="welcomeCard" style="background: var(--glass-popup); border: 1px solid var(--glass-border); border-radius: var(--radius-lg); padding: 30px; text-align: center; width: 90%; max-width: 400px; box-shadow: var(--shadow-soft);">
-        <h2 style="margin-top: 0; color: var(--accent-color);">Welcome to v2.3!</h2>
+        <h2 style="margin-top: 0; color: var(--accent-color);">Welcome to v2.4!</h2>
         <p style="color: var(--text-secondary); margin-bottom: 25px;">This update adds a powerful new dock and game tools. Would you like a quick tour?</p>
         <button onclick="startTour()" style="background: var(--accent-color); color: white; border: none; margin-right: 15px;">Start Tour</button>
         <button onclick="endTour(false)" style="background: rgba(255,255,255,0.1); color: var(--text-secondary); border: 1px solid var(--glass-border);">Not Now</button>
@@ -752,21 +756,21 @@ input:checked + .slider:before { transform: translateX(22px); }
 <header class="header">
   <h1>Math Master
     <span class="version-container">
-        <span class="version" onclick="toggleVersionInput(event)">v2.3</span>
+        <span class="version" onclick="toggleVersionInput(event)">v2.4</span>
         
  <div id="versionInputBubble" class="version-input-bubble" style="display:none;">
         <div id="versionTextDisplay"
              style="padding:8px; border-radius:6px; border:1px solid rgba(255,255,255,0.15);
                     background:rgba(255,255,255,0.05); color:white; font-weight:600;">
            <div id="versionTextDisplay" style="padding:15px; border-radius:12px; border:1px solid rgba(255,255,255,0.15); background:rgba(255,255,255,0.05); color:white; font-size:13px; line-height:1.5;">
-             <b> Version 2.3 Update Details:</b>
+             <b> Version 2.4 Update Details:</b>
 <li style="margin-bottom:4px;">
-            <b>New Games:</b> Added YoHoHo.io, Super Mario Bros, Pac-Man and redesigned Breakout, Chess, and Space Invaders
+            <b>New Games:</b> Added Arthur's Nightmare, Drift Hunters, FNAF 4, Ultimate Customs Night, FNAF World, Getaway Shootout, Gorilla Tag, Line Rider, OvO 2, Pixel Gun 3D, Slither.io, Slender, Space Waves, and Slowroads.
         </li>
         <li style="margin-bottom:4px;">
-            <b>Better Images:</b> Used new images for Backrooms, MotoX3M 2, Soundboard, and Wordle
-        <li style="margin-bottom:4px;">
-            <b>Updated Credits and Name:</b> Updated Credits Panel to incude newest games and removed .org from site name
+            <b>New Save System:</b> Using .save for importing and exporting for easier storage and better saving options
+
+           
 
     </ul>
 </div>
@@ -810,27 +814,34 @@ input:checked + .slider:before { transform: translateX(22px); }
         <p style="font-size: 14px; color: var(--text-secondary); margin-top: 10px;">This is a customizable floating information panel. Tell me what content or links you'd like to add here!</p>
     </div>
     <nav class="bottom-dock">
-        <button id="exportBtn" class="dock-btn" onclick="exportAll()" data-tooltip="Export Save">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-        </button>
-        <button id="importBtn" class="dock-btn" onclick="importAll()" data-tooltip="Import Save">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        </button>
-        
-        <div class="dock-sep"></div>
-        
-        <button class="dock-btn" id="searchBtn" onclick="toggleSearch()" data-tooltip="Search">
-            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
-        
-        <button class="dock-btn" id="canvasBtn" onclick="toggleCanvasUI()" data-tooltip="Canvas Mode">
-            <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
-        </button>
 
+        
+<input type="file" id="saveFileInput" style="display: none;" accept=".json" onchange="importSave(event)">
 
-        <div class="dock-sep"></div>
-        </nav>
-</div>
+<input type="file" id="saveFileInput" style="display: none;" accept=".save" onchange="importSave(event)">
+
+<nav class="bottom-dock">
+    <button id="exportBtn" class="dock-btn" onclick="exportSave()" data-tooltip="Export Save">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+    </button>
+    
+    <button id="importBtn" class="dock-btn" onclick="document.getElementById('saveFileInput').click()" data-tooltip="Import Save">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+    </button>
+    
+    <div class="dock-sep"></div>
+    
+    <button class="dock-btn" id="searchBtn" onclick="toggleSearch()" data-tooltip="Search">
+        <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+    </button>
+    
+    <button class="dock-btn" id="canvasBtn" onclick="toggleCanvasUI()" data-tooltip="Canvas Mode">
+        <svg class="icon" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>
+    </button>
+
+    <div class="dock-sep"></div>
+</nav>
+
 
 <script>
     // === Version Note System ===
@@ -868,15 +879,77 @@ function saveVersionNote() {
 /* ================= LOGIC ================= */
 
 // === Save Tools ===
-function exportAll(){
-  const o={};for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);o[k]=localStorage.getItem(k)}
-  navigator.clipboard.writeText(JSON.stringify(o));alert("Data copied!");
+
+// === Save Tools ===
+
+function exportSave() {
+    // 1. Gather all data from LocalStorage
+    const saveData = { ...localStorage };
+
+    // 2. Create the blob (text format)
+    const blob = new Blob(
+        [JSON.stringify(saveData, null, 2)], 
+        { type: "text/plain" }
+    );
+
+    // 3. Create download link with .save extension
+    const a = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    a.href = url;
+    a.download = "mathmaster.save"; // <--- Custom extension
+    
+    // 4. Trigger download
+    document.body.appendChild(a);
+    a.click();
+    
+    // 5. Cleanup
+    setTimeout(() => {
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+    }, 0);
 }
-function importAll(){
-  const i=prompt("Paste exported JSON:");if(!i)return;
-  try{const o=JSON.parse(i);for(const k in o)localStorage.setItem(k,o[k]);alert("Imported! Reload page.");}
-  catch(e){alert("Invalid JSON");}
+
+function importSave(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            // 1. Parse the file content
+            const saveData = JSON.parse(e.target.result);
+            
+            // 2. Safety check (ensure it's an object)
+            if (typeof saveData !== 'object' || saveData === null) {
+                throw new Error("Invalid save file structure");
+            }
+
+            // 3. Confirm overwrite
+            if (confirm("This will overwrite your current progress and reload the page. Are you sure?")) {
+                // Clear existing data
+                localStorage.clear();
+
+                // Restore new data
+                Object.keys(saveData).forEach(key => {
+                    localStorage.setItem(key, saveData[key]);
+                });
+
+                // 4. Force Reload to apply changes
+                alert("Save file loaded successfully!");
+                window.location.reload(); 
+            }
+        } catch (err) {
+            alert("Error: Could not load save file. Make sure it is a valid .save file.");
+            console.error(err);
+        }
+    };
+    reader.readAsText(file);
+    
+    // Reset input so you can select the same file again if needed
+    event.target.value = '';
 }
+
+
 
 
 // === Search System ===
@@ -1121,7 +1194,7 @@ let currentStep = 0;
 const tourSteps = [
     {
         element: 'h1 .version', // Targets the version number span
-        text: 'This is the **Version Number (v2.3)**, check here for update information!',
+        text: 'This is the **Version Number (v2.4)**, check here for update information!',
         position: 'bottom', // Tooltip appears below
         adjust: {y: 10, x: 0}
     },
@@ -1147,13 +1220,13 @@ const tourSteps = [
     // --- NEW: Export & Import steps inserted right before the Search step ---
     {
         element: '#exportBtn',
-        text: 'This is the **Export Save** button — use it to copy your saved data to the clipboard.',
+        text: 'This is the **Export Save** button — use it to save your save in a .json file',
         position: 'top',
         adjust: {y: -10, x: 0}
     },
     {
         element: '#importBtn',
-        text: 'This is the **Import Save** button — paste previously exported JSON here to restore saves.',
+        text: 'This is the **Import Save** button — import .json file to get your saves back.',
         position: 'top',
         adjust: {y: -10, x: 0}
     },
@@ -1336,6 +1409,7 @@ const games = [
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
   {name:"Among Us", path:"Assets/Game Data/among-us/index.html", logo:"Assets/Pictures/Non-edited/AmongUs-n.png"},
+  {name:"Arthur's Nightmare", path:"Assets/Game Data/arthur.html", logo:"Assets/Pictures/Non-edited/Arthur-Nightmare-n.webp"},
   {name:"Backrooms", path:"Assets/Game Data/backrooms/index.html", logo:"Assets/Pictures/Non-edited/Backrooms-n.png"},
   {name:"Bad Ice Cream", path:"Assets/Game Data/bad-ice-cream/index.html", logo:"Assets/Pictures/Non-edited/BadIceCream-n.png"},
   {name:"Baldis Basics", path:"Assets/Game Data/baldis-basics/index.html", logo:"Assets/Pictures/Non-edited/BaldiBasics-n.png"},
@@ -1352,22 +1426,30 @@ const games = [
   {name:"Crossyroad", path:"Assets/Game Data/crossyroad/index.html", logo:"Assets/Pictures/Non-edited/CrossyRoad-n.png"},
    {name:'Chess', path:'Assets/Game Data/chess/index.html', logo:'Assets/Pictures/Non-edited/Chess-n.png'},
   {name:'Chrome Dino', path:'Assets/Game Data/chromedino/index.html', logo:'Assets/Pictures/Non-edited/DinosaurGame-n.png'},
+  {name:"Drift Hunters",path:"Assets/Game Data/drift.html", logo:"Assets/Pictures/Non-edited/Drift-Hunters-n.png"},
   {name:"Drive Mad", path:"Assets/Game Data/drive-mad/index.html", logo:"Assets/Pictures/Non-edited/DriveMad-n.jpg"},
   {name:"Duck Life 4", path:"Assets/Game Data/ducklife4/index.html", logo:"Assets/Pictures/Non-edited/DuckLife4-n.jpg"},
    {name:'Doodle Jump', path:'Assets/Game Data/doodlejump/index.html', logo:'Assets/Pictures/Non-edited/DoodleJump-n.png'},
-  {name:"Five Nights at Freddys", path:"Assets/Game Data/Five Nights at Freddys.html", logo:"Assets/Pictures/Non-edited/FNAF-n.png"},
-  {name:"Five Nights at Freddys 2", path:"Assets/Game Data/Five Nights at Freddys 2.html", logo:"Assets/Pictures/Non-edited/FNAF2-n.png"},
-  {name:"Five Nights at Freddys 3", path:"Assets/Game Data/Five Nights at Freddys 3.html", logo:"Assets/Pictures/Non-edited/FNAF3-n.png"},
-  {name:"Five Nights at Freddys 4", path:"Assets/Game Data/Five Nights at Freddys 4.html", logo:"Assets/Pictures/Non-edited/FNAF4-n.png"},
+  {name:"Five Nights at Freddy's", path:"Assets/Game Data/Five Nights at Freddys.html", logo:"Assets/Pictures/Non-edited/FNAF-n.png"},
+  {name:"Five Nights at Freddy's 2", path:"Assets/Game Data/Five Nights at Freddys 2.html", logo:"Assets/Pictures/Non-edited/FNAF2-n.png"},
+  {name:"Five Nights at Freddy's 3", path:"Assets/Game Data/Five Nights at Freddys 3.html", logo:"Assets/Pictures/Non-edited/FNAF3-n.png"},
+  {name:"Five Nights at Freddy's 4", path:"Assets/Game Data/Five Nights at Freddys 4.html", logo:"Assets/Pictures/Non-edited/FNAF4-n.png"},
+  {name:"Five Nights at Freddy's Sister Location", path:"Assets/Game Data/fnafs.html", logo: "Assets/Pictures/Non-edited/Sister-Location-n.png"},
+  {name:"Five Nights at Freddy's Ultimate Customs Night", path:"Assets/Game Data/fnafu.html", logo: "Assets/Pictures/Non-edited/Customs-Night-n.png"},
+  {name:"FNAF World", path:"Assets/Game Data/fnafw.html", logo:"Assets/Pictures/Non-edited/FNAF-World.png"},
   {name: "Free Rider Jumps", path: "Assets/Game Data/free_rider_jumps/index.html", logo: "Assets/Pictures/Non-edited/Free-n.webp"},
   {name:"Fruit Ninja", path:"Assets/Game Data/fruitninja/index.html", logo:"Assets/Pictures/Non-edited/FruitNinja-n.jpg"},
    {name:'Flappy Bird', path:'Assets/Game Data/flappybird/index.html', logo:'Assets/Pictures/Non-edited/FlappyBird-n.webp'},
   {name: 'Friday Night Funkin (For Jacob)', path: 'Assets/Game Data/Friday Night Funkin.html', logo: 'Assets/Pictures/Non-edited/Friday-n.png'},
    {name:'Geometry Dash', path:'Assets/Game Data/geometrydash/index.html', logo:'Assets/Pictures/Non-edited/GeometryDash-n.jpg'},
+   {name:"Getaway Shootout", path:"Assets/Game Data/getaway-shootout.html", logo:"Assets/Pictures/Non-edited/getaway.jpg"},
+   {name:"Gorilla Tag", path:"Assets/Game Data/gtag.html", logo:"Assets/Pictures/Non-edited/Gorilla-Tag-n.jpg"},
    {name:"Gobble", path:'Assets/Game Data/Gobble.html', logo:"Assets/Pictures/Non-edited/Gobble-n.png"},
   {name:"Granny", path:"Assets/Game Data/Granny.html", logo:"Assets/Pictures/Non-edited/Granny-n.png"},
    {name:'Idle Breakout', path:'Assets/Game Data/idle-breakout-main/idle-breakout-main/game.html', logo:'Assets/Pictures/Non-edited/IdleBreakout-n.png'},
+   {name:"Line Rider", path:"Assets/Game Data/linerider.html", logo: "Assets/Pictures/Non-edited/Line-Rider-n.jpg"},
    {name:'Super Mario Bros', path:'Assets/Game Data/mario/index.html', logo:"Assets/Pictures/Non-edited/Mario-n.png"},
+   {name:'Monkey Mart', path: 'Assets/Game Data/monkeymart/index.html', logo:'Assets/Pictures/Non-edited/monkeymart-n.avif'},
   {name:"Minecraft", path:"Assets/Game Data/Minecraft 1.8.8.html", logo:"Assets/Pictures/Non-edited/Minecraft-n.png",external:true},
   {name:"Moto X3M 2", path:"Assets/Game Data/motox3m2/index.html", logo:"Assets/Pictures/Non-edited/Motox3m2-n.png"},
   {name:"Moto X3M 3", path:"Assets/Game Data/Moto X3M 3.html", logo:"Assets/Pictures/Non-edited/Motox3m3-n.png"},
@@ -1375,8 +1457,10 @@ const games = [
   {name:"Moto X3M Spooky", path:"Assets/Game Data/motox3m-spooky/index.html", logo:"Assets/Pictures/Non-edited/Motox3mSpooky-n.jpeg"},
   {name:"Moto X3M Winter", path:"Assets/Game Data/motox3mwinter/index.html", logo:"Assets/Pictures/Non-edited/Motox3mWinter-n.webp"},
    {name:'Ovo', path:'Assets/Game Data/ovo/index.html', logo:'Assets/Pictures/Non-edited/ovo-n.png'},
+   {name:"Ovo 2", path:"Assets/Game Data/OVO2.html", logo:"Assets/Pictures/Non-edited/OvO-2-n.webp"},
    {name:'Pac-Man', path:'Assets/Game Data/pacman/index.html', logo:'Assets/Pictures/Non-edited/Pacman-n.png'},
   {name:"Paper io 2", path:"Assets/Game Data/paperio2/index.html", logo:"Assets/Pictures/Non-edited/Paperio2-n.png"},
+  {name:"Pixel Gun 3D", path:"Assets/Game Data/pixl.html", logo:"Assets/Pictures/Non-edited/Pixel-Gun-3D-n.png"},
   {name:"Plants Vs Zombies", path:"Assets/Game Data/Plants vs Zombies.html", logo:"Assets/Pictures/Non-edited/PlantsVsZombies-n.png"},
   {name: "Poly Track", path: "Assets/Game Data/poly-track/index.html", logo: "Assets/Pictures/Non-edited/Poly-n.png"},
   {name:"Red Ball 4", path:"Assets/Game Data/Red Ball 4.html", logo:"Assets/Pictures/Non-edited/RedBall4-n.png"},
@@ -1389,12 +1473,16 @@ const games = [
   {name:"Run 3", path:"Assets/Game Data/Run 3.html", logo:"Assets/Pictures/Non-edited/Run3-n.png"},
  {name: "Soccer Random", path: "Assets/Game Data/Soccer-Random/index.html", logo: "Assets/Pictures/Non-edited/SoccerRandom-n.jpg"},
  {name: "Soundboard", path: "Assets/Game Data/soundboard/index.html", logo: "Assets/Pictures/Non-edited/Soundboard-n.jpg"},
+ {name:"Slither.io", path:"Assets/Game Data/sfge.html",logo:"Assets/Pictures/Non-edited/Slither-n.png"},
+ {name:"Slender", path:"Assets/Game Data/slender.html", logo: "Assets/Pictures/Non-edited/Slender-n.png"},
   {name:'Slope', path:'Assets/Game Data/Slope-Game-main/Slope-Game-main/index.html', logo:'Assets/Pictures/Non-edited/Slope-n.png'},
   {name:"Slope 2", path:"Assets/Game Data/Slope 2.html", logo:"Assets/Pictures/Non-edited/Slope2-n.png"},
   {name:"Solar Smash", path:"Assets/Game Data/Solar Smash.html", logo:"Assets/Pictures/Non-edited/SolarSmash-n.png"},
   {name:"Station Saturn", path:"Assets/Game Data/Station Saturn.html", logo:"Assets/Pictures/Non-edited/StationSaturn-n.png"},
   {name:"Steal A Brainrot", path:"Assets/Game Data/Steal A Brainrot.html", logo:"Assets/Pictures/Non-edited/StealABrainrot-n.png"},
   {name:"Stickman Hook", path:"Assets/Game Data/stickman-hook/index.html", logo:"Assets/Pictures/Non-edited/Stickman-n.png"},
+  {name:"Slow Roads", path:"Assets/Game Data/slowroads.html", logo:"Assets/Pictures/Non-edited/Slow-Roads-n.png"},
+  {name:"Space Waves", path:"Assets/Game Data/spacewaves.html", logo:"Assets/Pictures/Non-edited/Space-Waves-n.png"},
   {name:"Temple Run 2", path:"Assets/Game Data/Temple Run 2.html", logo:"Assets/Pictures/Non-edited/TempleRun2-n.png"},
  {name:"Space Invaders", path:'Assets/Game Data/spaceinvaders/index.html', logo:'Assets/Pictures/Non-edited/SpaceInvaders-n.png'},
  {name:"Thats Not My Neighbor", path: 'Assets/Game Data/Thats Not My Neighbor.html', logo:"Assets/Pictures/Non-edited/ThatsNotMyNeighbor-n.png",external:true},
@@ -1421,7 +1509,7 @@ for(const g of games){
 }
 
 // === Login System ===
-const PASSWORD = "Z8!qLr^M9@F#2sKX$W%7eC";
+const PASSWORD = "CabinTime2026!"
 const MAX_DEVICES = 10;
 const DEVICE_KEY = "mathmaster_device_id";
 const MASTER_LIST_KEY = "mathmaster_registered_devices";
