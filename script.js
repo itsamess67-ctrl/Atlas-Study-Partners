@@ -630,7 +630,7 @@ function toggleCredits() {
 const games = [
     // ... (Your game list here) ... 
   {name:"Chatbot", path:"https://personalfriend.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true},
-  {name:"Love Meter", path:"Assets/Game Data/love_meter (2).html", logo:"Assets/Pictures/Edited/LoveMeter-ed.png"},
+  {name:"Love Meter", path:"assets/game_data/love_meter.html", logo:"assets/pictures/edited/love_meter-ed.png"},
   {name:"12 Mini Battles", path:"Assets/Game Data/12 Mini Battles.html", logo:"Assets/Pictures/Non-edited/12MiniBattles-n.png"},
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
