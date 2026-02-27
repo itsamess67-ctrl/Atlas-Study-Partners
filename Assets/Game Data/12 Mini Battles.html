@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+    <title>12 Mini Battles (No Ads)</title>
+
+    <style>
+        body {
+            background: #000;
+            color: #ccc;
+            margin: 0;
+            padding: 0;
+        }
+
+        canvas {
+            image-rendering: optimizeSpeed;
+            -webkit-interpolation-mode: nearest-neighbor;
+            -ms-touch-action: none;
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+
+        :-webkit-full-screen #canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        div.gm4html5_div_class {
+            margin: 0;
+            padding: 0;
+            border: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <!-- Game Canvas -->
+    <div class="gm4html5_div_class" id="gm4html5_div_id">
+        <canvas id="canvas" width="1280" height="720">
+            <p>Your browser doesn't support HTML5 canvas.</p>
+        </canvas>
+
+        <!-- Loading screen canvas -->
+        <canvas width="1280" height="720" id="loading_screen"
+            style="position: absolute; left: 0; top: 0;"></canvas>
+    </div>
+
+    <!-- GameMaker compiled game file -->
+    <script src="https://cdn.jsdelivr.net/gh/yrgen73/12@250ba40ef0fed9b3106d4a2af96e463b819f54ef/12.js"></script>
+
+    <script>
+        window.onload = GameMaker_Init;
+    </script>
+</body>
+
+</html>
