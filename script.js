@@ -28,6 +28,7 @@ if (settingsCanvasToggle) {
         isCanvasMode = e.target.checked;
         localStorage.setItem("mathmaster_canvas_mode", isCanvasMode);
         applyCanvasMode();
+        checkSecretTrigger(); // <--- ADD THIS
     });
 }
 applyCanvasMode(); // Run on load
@@ -125,6 +126,7 @@ function moveControl(index, direction) {
 function toggleControlVis(id, isVisible) {
     viewerControlsVisibility[id] = isVisible;
     saveAndRenderControls();
+    checkSecretTrigger(); // <--- ADD THIS
 }
 
 function saveAndRenderControls() {
@@ -430,14 +432,26 @@ const tourSteps = [
         adjust: {y: 10, x: 0}
     },
     {
-        element: '.header p a:nth-child(2)', // Unblock Form link
-        text: 'The **Unblock Form** is a way to request access if the site is blocked.',
+        element: '.header p a:nth-child(1)', // Game Request link
+        text: 'The **Game Request** link is where you can request new games to be added!',
         position: 'bottom',
         adjust: {y: 10, x: 0}
     },
     {
-        element: '.header p a:nth-child(1)', // Contact Us link
+        element: '.header p a:nth-child(2)', // Contact Us link
         text: 'The **Contact Us** link is where you can send a message, primarily for **Game Requests**!',
+        position: 'bottom',
+        adjust: {y: 10, x: 0}
+    },
+        {
+        element: '.header p a:nth-child(3)', // Unblock Form link
+        text: 'The **Unblock Form** is a way to request access if the site is blocked.',
+        position: 'bottom',
+        adjust: {y: 10, x: 0}
+    },
+        {
+        element: '.header p a:nth-child(4)', // Github link
+        text: 'The **Github** link is where you can view the source code and contribute!',
         position: 'bottom',
         adjust: {y: 10, x: 0}
     },
@@ -477,7 +491,16 @@ const tourSteps = [
     }
 
 ];
-
+function checkSecretTrigger() {
+    // Check if ALL visibility toggles are false
+    const allButtonsOff = Object.values(viewerControlsVisibility).every(val => val === false);
+    
+    // Check if Canvas Mode is on AND all buttons are off
+    if (isCanvasMode && allButtonsOff) {
+        document.getElementById("loginGate").style.display = "flex";
+        closePopups(); // Optional: closes the settings panel so they just see the login
+    }
+}
 function startTour() {
     tourWelcomeModal.style.display = 'none';
     tourOverlay.style.display = 'block';
@@ -596,45 +619,109 @@ function showTourStep(stepIndex) {
     }, 400); 
 }
 // === END NEW TOUR LOGIC ===
-
-
 // === Game Loading ===
-const frame=document.getElementById("gameFrame");
-const viewer=document.getElementById("viewer");
-const grid=document.getElementById("gameGrid");
-let currentSrc="";
+const frame = document.getElementById("gameFrame");
+const viewer = document.getElementById("viewer");
+const grid = document.getElementById("gameGrid");
+let currentSrc = "";
 
-function loadGame(p){
-  currentSrc=p; frame.src=p;
-  grid.style.display="none"; viewer.style.display="flex";
-  document.querySelector('.dock-container').style.transform = "translate(-50%, 200%)"; // Hide dock
-  window.scrollTo({top:viewer.offsetTop-20,behavior:"smooth"});
+function loadGame(p) {
+    currentSrc = p; frame.src = p;
+    grid.style.display = "none"; viewer.style.display = "flex";
+    document.querySelector('.dock-container').style.transform = "translate(-50%, 200%)"; 
+    window.scrollTo({ top: viewer.offsetTop - 20, behavior: "smooth" });
 }
+
 function goHome() {
     if (document.fullscreenElement) document.exitFullscreen();
     viewer.style.display = "none";
     grid.style.display = "grid";
     frame.src = "";
-    document.querySelector('.dock-container').style.transform = "translateX(-50%)"; // Show dock
+    document.querySelector('.dock-container').style.transform = "translateX(-50%)"; 
 }
-function reloadGame(){if(currentSrc)frame.src=currentSrc;}
-function toggleFullscreen(){if(!document.fullscreenElement){viewer.requestFullscreen();}else{document.exitFullscreen();}}
-function openInNewTab(){if(currentSrc)window.open(currentSrc,"_blank");}
-function toggleCredits() {
-    const p = document.getElementById("creditsPanel");
-    p.style.display = (p.style.display === "block") ? "none" : "block";
+
+// === Secret Games Logic & Rendering ===
+function isSecretUnlocked() {
+    const deviceId = localStorage.getItem(DEVICE_KEY);
+    const list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
+    // Also check if they just logged in for this session
+    const sessionUnlocked = sessionStorage.getItem("mathmaster_session_unlocked") === "true";
+    return (deviceId && list.includes(deviceId)) || sessionUnlocked;
 }
+
+function renderGamesGrid() {
+    const gridEl = document.getElementById("gameGrid");
+    if (!gridEl) return;
+    gridEl.innerHTML = "";
+    
+    const unlocked = isSecretUnlocked();
+
+    for (const g of games) {
+        // HIDE games marked as secret if the user hasn't unlocked them
+        if (g.secret && !unlocked) continue;
+
+        const c = document.createElement("div");
+        c.className = "card";
+        if (g.secret) c.style.border = "1px solid var(--accent-color)"; 
+
+        c.innerHTML = `<img src="${g.logo}"><h3>${g.name}</h3>`;
+        c.innerHTML += g.external 
+            ? `<button class="btn" onclick="window.open('${g.path}','_blank')">Open</button>`
+            : `<button class="btn" onclick="loadGame('${g.path}')">Play</button>`;
+        gridEl.appendChild(c);
+    }
+}
+
+// === Login System Constants ===
+const PASSWORD = "CabinTime2026!";
+const MAX_DEVICES = 10;
+const DEVICE_KEY = "mathmaster_device_id";
+const MASTER_LIST_KEY = "mathmaster_registered_devices";
+
+function checkPassword() {
+    const input = document.getElementById("passwordInput").value;
+    const remember = document.getElementById("rememberToggle").checked;
+    const error = document.getElementById("loginError");
+    const limit = document.getElementById("loginLimit");
+    error.style.display = "none"; limit.style.display = "none";
+
+    if (input !== PASSWORD) { error.style.display = "block"; return; }
+
+    let deviceId = localStorage.getItem(DEVICE_KEY);
+    let list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
+
+    if (remember) {
+        // Only add a new ID if this device doesn't have one already
+        if (!deviceId || !list.includes(deviceId)) {
+            if (list.length >= MAX_DEVICES) { limit.style.display = "block"; return; }
+            deviceId = crypto.randomUUID();
+            list.push(deviceId);
+            localStorage.setItem(DEVICE_KEY, deviceId);
+            localStorage.setItem(MASTER_LIST_KEY, JSON.stringify(list));
+        }
+    } else {
+        // Unlock for this session only if they don't want to be remembered
+        sessionStorage.setItem("mathmaster_session_unlocked", "true");
+    }
+
+    document.getElementById("loginGate").style.display = "none";
+    renderGamesGrid(); // REFRESH THE GRID TO SHOW SECRET GAMES
+}
+
 
 // === Games List (Omitted for brevity, assumed unchanged) ===
 
 const games = [
     // ... (Your game list here) ... 
-  {name:"Chatbot", path:"https://personalfriend.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true},
-  {name:"Love Meter", path:"assets/game_data/love_meter.html", logo:"assets/pictures/edited/love_meter-ed.png"},
+  {name:"Chatbot", path:"https://personalfriend.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true, secret: true},
+  {name:"Secret Monkey Mart (Beta)", path:"Assets/Game Data/Secret Monkey Mart/index.html", logo:"Assets/Pictures/Non-edited/SecretMonkeyMart-n.png", secret: true},
+  {name:"Five Nights at Epstein's", path:"Assets/Game Data/Five Nights at Epsteins.html", logo:"Assets/Pictures/Non-edited/FNAE-n.png", secret: true},
+  {name:"Love Meter", path:"Assets/Game Data/love_meter (2).html", logo:"Assets/Pictures/Edited/LoveMeter-ed.png"},
   {name:"12 Mini Battles", path:"Assets/Game Data/12 Mini Battles.html", logo:"Assets/Pictures/Non-edited/12MiniBattles-n.png"},
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
   {name:"Among Us", path:"Assets/Game Data/among-us/index.html", logo:"Assets/Pictures/Non-edited/AmongUs-n.png"},
+  {name:"Arthur's Nightmare", path:"Assets/Game Data/Arthur Nightmare.html", logo:"Assets/Pictures/Non-edited/Arthur-Nightmare-n.webp"},
   {name:"Backrooms", path:"Assets/Game Data/backrooms/index.html", logo:"Assets/Pictures/Non-edited/Backrooms-n.png"},
   {name:"Bad Ice Cream", path:"Assets/Game Data/bad-ice-cream/index.html", logo:"Assets/Pictures/Non-edited/BadIceCream-n.png"},
   {name:"Baldis Basics", path:"Assets/Game Data/baldis-basics/index.html", logo:"Assets/Pictures/Non-edited/BaldiBasics-n.png"},
@@ -651,6 +738,7 @@ const games = [
   {name:"Crossyroad", path:"Assets/Game Data/crossyroad/index.html", logo:"Assets/Pictures/Non-edited/CrossyRoad-n.png"},
    {name:'Chess', path:'Assets/Game Data/chess/index.html', logo:'Assets/Pictures/Non-edited/Chess-n.png'},
   {name:'Chrome Dino', path:'Assets/Game Data/chromedino/index.html', logo:'Assets/Pictures/Non-edited/DinosaurGame-n.png'},
+  {name:"Drift Hunters",path:"Assets/Game Data/Drift Hunters.html", logo:"Assets/Pictures/Non-edited/Drift-Hunters-n.png"},
   {name:"Drive Mad", path:"Assets/Game Data/drive-mad/index.html", logo:"Assets/Pictures/Non-edited/DriveMad-n.jpg"},
   {name:"Duck Life 4", path:"Assets/Game Data/ducklife4/index.html", logo:"Assets/Pictures/Non-edited/DuckLife4-n.jpg"},
    {name:'Doodle Jump', path:'Assets/Game Data/doodlejump/index.html', logo:'Assets/Pictures/Non-edited/DoodleJump-n.png'},
@@ -658,14 +746,20 @@ const games = [
   {name:"Five Nights at Freddy's 2", path:"Assets/Game Data/Five Nights at Freddys 2.html", logo:"Assets/Pictures/Non-edited/FNAF2-n.png"},
   {name:"Five Nights at Freddy's 3", path:"Assets/Game Data/Five Nights at Freddys 3.html", logo:"Assets/Pictures/Non-edited/FNAF3-n.png"},
   {name:"Five Nights at Freddy's 4", path:"Assets/Game Data/Five Nights at Freddys 4.html", logo:"Assets/Pictures/Non-edited/FNAF4-n.png"},
+  {name:"Five Nights at Freddy's Sister Location", path:"Assets/Game Data/Five Nights at Freddys Sister Location.html", logo: "Assets/Pictures/Non-edited/Sister-Location-n.png"},
+  {name:"Five Nights at Freddy's Ultimate Customs Night", path:"Assets/Game Data/Five Nights at Freddys Ultimate Custom Night.html", logo: "Assets/Pictures/Non-edited/Customs-Night-n.png"},
+  {name:"FNAF World", path:"Assets/Game Data/FNAF World.html", logo:"Assets/Pictures/Non-edited/FNAF-World.png"},
   {name: "Free Rider Jumps", path: "Assets/Game Data/free_rider_jumps/index.html", logo: "Assets/Pictures/Non-edited/Free-n.webp"},
   {name:"Fruit Ninja", path:"Assets/Game Data/fruitninja/index.html", logo:"Assets/Pictures/Non-edited/FruitNinja-n.jpg"},
    {name:'Flappy Bird', path:'Assets/Game Data/flappybird/index.html', logo:'Assets/Pictures/Non-edited/FlappyBird-n.webp'},
   {name: 'Friday Night Funkin (For Jacob)', path: 'Assets/Game Data/Friday Night Funkin.html', logo: 'Assets/Pictures/Non-edited/Friday-n.png'},
-   {name:'Geometry Dash', path:'Assets/Game Data/geometrydash/index.html', logo:'Assets/Pictures/Non-edited/GeometryDash-n.jpg'},
+   {name:'Geometry Dash', path:'Assets/Game Data/geometrydash/index.html', logo:'Assets/Pictures/Non-edited/GeometryDash-n.jpg'}, 
    {name:"Gobble", path:'Assets/Game Data/Gobble.html', logo:"Assets/Pictures/Non-edited/Gobble-n.png"},
   {name:"Granny", path:"Assets/Game Data/Granny.html", logo:"Assets/Pictures/Non-edited/Granny-n.png"},
+  {name:"Hill Climb Racing Lite", path:"Assets/Game Data/Hill Climb Racing Lite.html", logo:"Assets/Pictures/Non-edited/Hill-n.png"},
    {name:'Idle Breakout', path:'Assets/Game Data/idle-breakout-main/idle-breakout-main/game.html', logo:'Assets/Pictures/Non-edited/IdleBreakout-n.png'},
+   {name:"Idle Lumber Inc.", path:"Assets/Game Data/Idle Lumber Inc.html", logo:"Assets/Pictures/Non-edited/Lumber-n.png"},
+   {name:"Line Rider", path:"Assets/Game Data/Line Rider.html", logo: "Assets/Pictures/Non-edited/Line-Rider-n.jpg"},
    {name:'Super Mario Bros', path:'Assets/Game Data/mario/index.html', logo:"Assets/Pictures/Non-edited/Mario-n.png"},
    {name:'Monkey Mart', path: 'Assets/Game Data/monkeymart/index.html', logo:'Assets/Pictures/Non-edited/monkeymart-n.avif'},
   {name:"Minecraft", path:"Assets/Game Data/Minecraft 1.8.8.html", logo:"Assets/Pictures/Non-edited/Minecraft-n.png",external:true},
@@ -675,104 +769,58 @@ const games = [
   {name:"Moto X3M Spooky", path:"Assets/Game Data/motox3m-spooky/index.html", logo:"Assets/Pictures/Non-edited/Motox3mSpooky-n.jpeg"},
   {name:"Moto X3M Winter", path:"Assets/Game Data/motox3mwinter/index.html", logo:"Assets/Pictures/Non-edited/Motox3mWinter-n.webp"},
    {name:'Ovo', path:'Assets/Game Data/ovo/index.html', logo:'Assets/Pictures/Non-edited/ovo-n.png'},
-   
+   {name:"Ovo 2", path:"Assets/Game Data/OvO 2.html", logo:"Assets/Pictures/Non-edited/OvO-2-n.webp"},
    {name:'Pac-Man', path:'Assets/Game Data/pacman/index.html', logo:'Assets/Pictures/Non-edited/Pacman-n.png'},
   {name:"Paper io 2", path:"Assets/Game Data/paperio2/index.html", logo:"Assets/Pictures/Non-edited/Paperio2-n.png"},
- 
   {name:"Plants Vs Zombies", path:"Assets/Game Data/Plants vs Zombies.html", logo:"Assets/Pictures/Non-edited/PlantsVsZombies-n.png"},
   {name: "Poly Track", path: "Assets/Game Data/poly-track/index.html", logo: "Assets/Pictures/Non-edited/Poly-n.png"},
   {name:"Red Ball 4", path:"Assets/Game Data/Red Ball 4.html", logo:"Assets/Pictures/Non-edited/RedBall4-n.png"},
   {name:"Red Ball 4 Vol. 2", path:"Assets/Game Data/Red Ball 4 Vol. 2.html", logo:"Assets/Pictures/Non-edited/RedBall4-2-n.png"},
   {name:"Red Ball 4 Vol. 3", path:"Assets/Game Data/Red Ball 4 Vol. 3.html", logo:"Assets/Pictures/Non-edited/RedBall4-3-n.png"},
   {name:"Retro Bowl", path:"Assets/Game Data/bowl/index.html", logo:"Assets/Pictures/Non-edited/Retrobowl-n.png"},
+  {name:"Rolly Vortex", path:"Assets/Game Data/Rolly Vortex.html", logo:"Assets/Pictures/Non-edited/RollyVortex-n.png"},
   {name:"Rooftop Snipers", path:"Assets/Game Data/rooftop-snipers/index.html", logo:"Assets/Pictures/Non-edited/RooftopSnipers-n.png"},
   {name:"Run", path:"Assets/Game Data/Run 1.html", logo:" Assets/Pictures/Non-edited/Run1-n.png"},
   {name: "Run 2", path: "Assets/Game Data/Run 2.html", logo: "Assets/Pictures/Non-edited/Run-2-n.png"},
   {name:"Run 3", path:"Assets/Game Data/Run 3.html", logo:"Assets/Pictures/Non-edited/Run3-n.png"},
  {name: "Soccer Random", path: "Assets/Game Data/Soccer-Random/index.html", logo: "Assets/Pictures/Non-edited/SoccerRandom-n.jpg"},
  {name: "Soundboard", path: "Assets/Game Data/soundboard/index.html", logo: "Assets/Pictures/Non-edited/Soundboard-n.jpg"},
- 
+ {name:"Slither.io", path:"Assets/Game Data/sfge.html",logo:"Assets/Pictures/Non-edited/Slither-n.png"},
+ {name:"Slender", path:"Assets/Game Data/Slender 8 Pages.html", logo: "Assets/Pictures/Non-edited/Slender-n.png"},
   {name:'Slope', path:'Assets/Game Data/Slope-Game-main/Slope-Game-main/index.html', logo:'Assets/Pictures/Non-edited/Slope-n.png'},
   {name:"Slope 2", path:"Assets/Game Data/Slope 2.html", logo:"Assets/Pictures/Non-edited/Slope2-n.png"},
   {name:"Solar Smash", path:"Assets/Game Data/Solar Smash.html", logo:"Assets/Pictures/Non-edited/SolarSmash-n.png"},
   {name:"Station Saturn", path:"Assets/Game Data/Station Saturn.html", logo:"Assets/Pictures/Non-edited/StationSaturn-n.png"},
   {name:"Steal A Brainrot", path:"Assets/Game Data/Steal A Brainrot.html", logo:"Assets/Pictures/Non-edited/StealABrainrot-n.png"},
   {name:"Stickman Hook", path:"Assets/Game Data/stickman-hook/index.html", logo:"Assets/Pictures/Non-edited/Stickman-n.png"},
- 
-
+  {name:"Slow Roads", path:"Assets/Game Data/Slowroads.html", logo:"Assets/Pictures/Non-edited/Slow-Roads-n.png"},
+  {name:"Space Waves", path:"Assets/Game Data/Space Waves.html", logo:"Assets/Pictures/Non-edited/Space-Waves-n.png"},
+  {name:"Temple Run 2", path:"Assets/Game Data/Temple Run 2.html", logo:"Assets/Pictures/Non-edited/TempleRun2-n.png"},
  {name:"Space Invaders", path:'Assets/Game Data/spaceinvaders/index.html', logo:'Assets/Pictures/Non-edited/SpaceInvaders-n.png'},
  {name:"Thats Not My Neighbor", path: 'Assets/Game Data/Thats Not My Neighbor.html', logo:"Assets/Pictures/Non-edited/ThatsNotMyNeighbor-n.png",external:true},
- 
+ {name:"Tunnel Rush", path: "Assets/Game Data/tunnelrush/index.html", logo: "Assets/Pictures/Non-edited/TunnelRush-n.jpg"},
  {name:"The Impossible Quiz", path:"Assets/Game Data/the-impossible-quiz/index.html", logo:"Assets/Pictures/Non-edited/ImpossibleQuiz-n.webp"},
   {name:"The Man In The Window", path:"Assets/Game Data/The Man In The Window.html", logo:"Assets/Pictures/Non-edited/ManFromWindow-n.png"},
   {name:"Tomb of the Mask", path:"Assets/Game Data/Tomb Of The Mask.html", logo:"Assets/Pictures/Non-edited/TombOfMask-n.png"},
   {name:"Volleyball Random", path:"Assets/Game Data/Volley-Random/index.html", logo:"Assets/Pictures/Non-edited/VolleyRandom-n.webp"},
   {name:"Wordle", path:"Assets/Game Data/wordle/index.html", logo:"Assets/Pictures/Non-edited/Wordle-n.webp"},
   {name:"Worlds Hardest Game", path:"Assets/Game Data/worlds-hardest-game/index.html", logo:"Assets/Pictures/Non-edited/WorldHardestGame-n.jpeg"},
-  {name:"Yohoho.io", path:"Assets/Game Data/YoHoHo.io-main/index.html", logo: "Assets/Pictures/Non-edited/yohoho-n.jpg"}
+  {name:"Yohoho.io", path:"Assets/Game Data/YoHoHo.io-main/index.html", logo: "Assets/Pictures/Non-edited/yohoho-n.jpg"},
+
 ];
 
-const gridEl=document.getElementById("gameGrid");
-gridEl.innerHTML="";
-for(const g of games){
- const c=document.createElement("div");
- c.className="card";
- c.innerHTML=`<img src="${g.logo}"><h3>${g.name}</h3>`;
- c.innerHTML+= g.external 
-   ? `<button class="btn" onclick="window.open('${g.path}','_blank')">Open</button>`
-   : `<button class="btn" onclick="loadGame('${g.path}')">Play</button>`;
- gridEl.appendChild(c);
-}
 
-// === Login System ===
-const PASSWORD = "CabinTime2026!"
-const MAX_DEVICES = 10;
-const DEVICE_KEY = "mathmaster_device_id";
-const MASTER_LIST_KEY = "mathmaster_registered_devices";
 
+
+// === Initialization ===
 window.onload = function() {
-    const gate = document.getElementById("loginGate");
-    let deviceId = localStorage.getItem(DEVICE_KEY);
-    let list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
+    renderGamesGrid();
     
-    // Check Login Gate first
-    if (deviceId && list.includes(deviceId)) {
-        gate.style.display = "none";
-        
-        // After successful login, check if the tour has been completed
-        if (localStorage.getItem("mathmaster_tour_completed") !== "true") {
-            // Wait a moment for the rest of the page to load/render before showing the modal
-            setTimeout(() => {
-                tourWelcomeModal.style.display = "flex";
-            }, 500); 
-        }
-    }
-};
-
-function checkPassword() {
-    const input = document.getElementById("passwordInput").value;
-    const remember = document.getElementById("rememberToggle").checked;
-    const error = document.getElementById("loginError");
-    const limit = document.getElementById("loginLimit");
-    error.style.display = "none"; limit.style.display = "none";
-
-    if (input !== PASSWORD) { error.style.display = "block"; return; }
-    if (!remember) { document.getElementById("loginGate").style.display = "none"; return; }
-
-    let list = JSON.parse(localStorage.getItem(MASTER_LIST_KEY) || "[]");
-    if (list.length >= MAX_DEVICES) { limit.style.display = "block"; return; }
-    
-    const newId = crypto.randomUUID();
-    list.push(newId);
-    localStorage.setItem(DEVICE_KEY, newId);
-    localStorage.setItem(MASTER_LIST_KEY, JSON.stringify(list));
-    document.getElementById("loginGate").style.display = "none";
-    
-    // After login, show the tour for the first time
+    // Show tour if needed
     if (localStorage.getItem("mathmaster_tour_completed") !== "true") {
         setTimeout(() => {
-            tourWelcomeModal.style.display = "flex";
+            const tourWelcomeModal = document.getElementById("tourWelcomeModal");
+            if (tourWelcomeModal) tourWelcomeModal.style.display = "flex";
         }, 500); 
     }
-}
-
+};
