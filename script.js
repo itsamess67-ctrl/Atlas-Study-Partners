@@ -1,57 +1,6 @@
 
 
-function toggleVersionInput(event) {
-  // Prevent the click from bubbling up to other elements
-  event.stopPropagation(); 
-  
-  // Find the bubble element
-  const bubble = document.getElementById("versionInputBubble");
-  
-  // Toggle its display between 'block' (visible) and 'none' (hidden)
-  if (bubble.style.display === "none" || bubble.style.display === "") {
-    bubble.style.display = "block";
-  } else {
-    bubble.style.display = "none";
-  }
-}
-  
-
 // === Unified Settings & Canvas System ===
-
-// 1. Canvas Mode Logic (Moved into Settings)
-let isCanvasMode = localStorage.getItem("mathmaster_canvas_mode") === "true";
-const settingsCanvasToggle = document.getElementById("settingsCanvasToggle");
-
-if (settingsCanvasToggle) {
-    settingsCanvasToggle.checked = isCanvasMode;
-    settingsCanvasToggle.addEventListener('change', (e) => {
-        isCanvasMode = e.target.checked;
-        localStorage.setItem("mathmaster_canvas_mode", isCanvasMode);
-        applyCanvasMode();
-        checkSecretTrigger(); // <--- ADD THIS
-    });
-}
-applyCanvasMode(); // Run on load
-
-function applyCanvasMode() {
-    if (isCanvasMode) {
-        document.title = "Dashboard"; // Disguise Name
-        changeFavicon("Assets/Pictures/Non-edited/canvas-n.png");
-    } else {
-        document.title = "Math Master"; // Real Name
-        changeFavicon("Assets/Pictures/Non-edited/Math-n.png");
-    }
-}
-
-function changeFavicon(src) {
-    const oldLink = document.getElementById("favicon");
-    if (oldLink) oldLink.remove();
-    const newLink = document.createElement("link");
-    newLink.id = "favicon";
-    newLink.rel = "icon";
-    newLink.href = src;
-    document.head.appendChild(newLink);
-}
 
 // 2. Viewer Controls Customization Logic
 let viewerControlsConfig = JSON.parse(localStorage.getItem('mathmaster_controls')) || [
@@ -158,27 +107,44 @@ renderViewerButtons();
 
 // === Save Tools ===
 
-function exportSave() {
-    // 1. Gather all data from LocalStorage
-    const saveData = { ...localStorage };
+// === Advanced Full-Spectrum Save System ===
 
-    // 2. Create the blob (text format)
+async function exportSave() {
+    const saveData = {
+        meta: {
+            date: new Date().toISOString(),
+            version: "2.5-FullBackup"
+        },
+        storage: {
+            local: { ...localStorage },
+            session: { ...sessionStorage },
+            cookies: document.cookie
+        },
+        // Placeholder for IndexedDB (Requires async iteration)
+        indexedDB: {} 
+    };
+
+    // Attempt to gather IndexedDB names (limited browser support for listing)
+    if (window.indexedDB.databases) {
+        const dbs = await window.indexedDB.databases();
+        saveData.meta.dbCount = dbs.length;
+    }
+
+    // Create the blob (JSON format)
     const blob = new Blob(
         [JSON.stringify(saveData, null, 2)], 
-        { type: "text/plain" }
+        { type: "application/json" }
     );
 
-    // 3. Create download link with .save extension
+    // Create download link with .json extension
     const a = document.createElement("a");
     const url = URL.createObjectURL(blob);
     a.href = url;
-    a.download = "mathmaster.save"; // <--- Custom extension
+    a.download = `mathmaster_backup_${Date.now()}.json`;
     
-    // 4. Trigger download
     document.body.appendChild(a);
     a.click();
     
-    // 5. Cleanup
     setTimeout(() => {
         document.body.removeChild(a);
         window.URL.revokeObjectURL(url);
@@ -192,36 +158,35 @@ function importSave(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            // 1. Parse the file content
-            const saveData = JSON.parse(e.target.result);
+            const data = JSON.parse(e.target.result);
             
-            // 2. Safety check (ensure it's an object)
-            if (typeof saveData !== 'object' || saveData === null) {
-                throw new Error("Invalid save file structure");
-            }
+            if (!data.storage) throw new Error("Invalid Backup Format");
 
-            // 3. Confirm overwrite
-            if (confirm("This will overwrite your current progress and reload the page. Are you sure?")) {
-                // Clear existing data
+            if (confirm("This will RESTORE all settings, cookies, and session data, then reload. Continue?")) {
+                // 1. Restore LocalStorage
                 localStorage.clear();
+                Object.entries(data.storage.local).forEach(([k, v]) => localStorage.setItem(k, v));
 
-                // Restore new data
-                Object.keys(saveData).forEach(key => {
-                    localStorage.setItem(key, saveData[key]);
-                });
+                // 2. Restore SessionStorage
+                sessionStorage.clear();
+                Object.entries(data.storage.session).forEach(([k, v]) => sessionStorage.setItem(k, v));
 
-                // 4. Force Reload to apply changes
-                alert("Save file loaded successfully!");
+                // 3. Restore Cookies
+                if (data.storage.cookies) {
+                    data.storage.cookies.split(";").forEach(cookie => {
+                        document.cookie = cookie.trim() + ";path=/;max-age=31536000";
+                    });
+                }
+
+                alert("Restore successful! Reloading site...");
                 window.location.reload(); 
             }
         } catch (err) {
-            alert("Error: Could not load save file. Make sure it is a valid .save file.");
+            alert("Error: Invalid .json backup file.");
             console.error(err);
         }
     };
     reader.readAsText(file);
-    
-    // Reset input so you can select the same file again if needed
     event.target.value = '';
 }
 
@@ -326,33 +291,6 @@ searchInput.addEventListener('input', e => {
 
 
 
-// Listener for the switch inside the popup
-canvasToggleInput.addEventListener('change', (e) => {
-    isCanvasMode = e.target.checked;
-    localStorage.setItem("mathmaster_canvas_mode", isCanvasMode);
-    applyCanvasMode();
-});
-
-function applyCanvasMode() {
-    if (isCanvasMode) {
-        document.title = "Dashboard"; // Disguise Name
-        changeFavicon("Assets/Pictures/Non-edited/canvas-n.png");
-    } else {
-        document.title = "Math Master"; // Real Name
-        changeFavicon("Assets/Pictures/Non-edited/Math-n.png");
-    }
-}
-
-function changeFavicon(src) {
-    const oldLink = document.getElementById("favicon");
-    if (oldLink) oldLink.remove();
-    
-    const newLink = document.createElement("link");
-    newLink.id = "favicon";
-    newLink.rel = "icon";
-    newLink.href = src;
-    document.head.appendChild(newLink);
-}
 
 document.addEventListener('click', (e) => {
     const isDock = e.target.closest('.dock-container');
@@ -707,16 +645,61 @@ function checkPassword() {
     document.getElementById("loginGate").style.display = "none";
     renderGamesGrid(); // REFRESH THE GRID TO SHOW SECRET GAMES
 }
+// === Missing Utility Functions ===
 
+/**
+ * Toggles the visibility of the Credits panel
+ */
+function toggleCredits() {
+    const panel = document.getElementById("creditsPanel");
+    if (panel) {
+        // Toggle between block and none
+        panel.style.display = (panel.style.display === "block") ? "none" : "block";
+    }
+}
+
+/**
+ * Reloads the current game iframe
+ */
+function reloadGame() {
+    const frame = document.getElementById("gameFrame");
+    if (frame && frame.src) {
+        frame.src = frame.src; // Simple way to trigger an iframe reload
+    }
+}
+
+/**
+ * Toggles fullscreen mode for the game viewer
+ */
+function toggleFullscreen() {
+    const viewer = document.getElementById("viewer");
+    if (!document.fullscreenElement) {
+        viewer.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+/**
+ * Opens the current game URL in a new browser tab
+ */
+function openInNewTab() {
+    const frame = document.getElementById("gameFrame");
+    if (frame && frame.src) {
+        window.open(frame.src, '_blank');
+    }
+}
 
 // === Games List (Omitted for brevity, assumed unchanged) ===
 
 const games = [
     // ... (Your game list here) ... 
   {name:"Chatbot", path:"https://personalfriend.zapier.app/", logo:"Assets/Pictures/Non-edited/Chatbot-n.png", external:true, secret: true},
-  {name:"Secret Monkey Mart (Beta)", path:"Assets/Game Data/Secret Monkey Mart/index.html", logo:"Assets/Pictures/Non-edited/SecretMonkeyMart-n.png", secret: true},
-  {name:"Five Nights at Epstein's", path:"Assets/Game Data/Five Nights at Epsteins.html", logo:"Assets/Pictures/Non-edited/FNAE-n.png", secret: true},
-  {name:"Love Meter", path:"Assets/Game Data/love_meter (2).html", logo:"Assets/Pictures/Edited/LoveMeter-ed.png"},
+  {name:"Secret Monkey Mart", path: "Assets/Game Data/MonkeyMart-S.html", logo:"Assets/Pictures/Non-edited/SecretMonkeyMart-n.webp", secret: true},
+  {name:"Your Mom's House", path:"Assets/Game Data/Five Nights at Epsteins.html", logo:"Assets/Pictures/Non-edited/FNAE.jpg", secret: true},
+  {name:"Love Meter", path:"Assets/Game Data/love_meter.html", logo:"Assets/Pictures/Edited/LoveMeter-ed.png"},
   {name:"12 Mini Battles", path:"Assets/Game Data/12 Mini Battles.html", logo:"Assets/Pictures/Non-edited/12MiniBattles-n.png"},
   {name:"1v1.lol", path:"Assets/Game Data/1v1lol/index.html", logo:"Assets/Pictures/Non-edited/1v1.lol-n.png"},
   {name:"2048", path:"Assets/Game Data/2048/index.html", logo:"Assets/Pictures/Non-edited/2048-n.png"},
@@ -810,8 +793,152 @@ const games = [
 ];
 
 
+function toggleVersionInput(event) {
+  event.stopPropagation(); 
+  const bubble = document.getElementById("versionInputBubble");
+  if (bubble.style.display === "none" || bubble.style.display === "") {
+    bubble.style.display = "block";
+  } else {
+    bubble.style.display = "none";
+  }
+}
 
+// === 1. Disguise & Security Logic ===
 
+// Initialize all settings from LocalStorage or Defaults
+let isCanvasMode = localStorage.getItem("mathmaster_canvas_mode") === "true";
+let panicKey = localStorage.getItem("mathmaster_panic_key") || "`";
+let panicURL = localStorage.getItem("mathmaster_panic_url") || "https://www.google.com";
+let customTitle = localStorage.getItem("mathmaster_title") || "Math Master";
+let customFavicon = localStorage.getItem("mathmaster_favicon") || "Assets/Pictures/Non-edited/Math-n.png";
+
+// Core function to change the icon
+function changeFavicon(src) {
+    const oldLink = document.getElementById("favicon");
+    if (oldLink) oldLink.remove();
+    const newLink = document.createElement("link");
+    newLink.id = "favicon";
+    newLink.rel = "icon";
+    newLink.href = src;
+    document.head.appendChild(newLink);
+}
+
+// Core function to apply the correct identity (Disguise vs Custom)
+function applyTabIdentity() {
+    if (isCanvasMode) {
+        document.title = "Dashboard";
+        changeFavicon("Assets/Pictures/Non-edited/canvas-n.png");
+    } else {
+        document.title = customTitle;
+        changeFavicon(customFavicon);
+    }
+}
+
+// Apply immediately on load
+applyTabIdentity();
+
+// Wire up BOTH Canvas Mode Toggles (Dock & Settings)
+const settingsCanvasToggle = document.getElementById("settingsCanvasToggle");
+const canvasToggleInput = document.getElementById("canvasToggleInput");
+
+function handleCanvasToggle(e) {
+    isCanvasMode = e.target.checked;
+    localStorage.setItem("mathmaster_canvas_mode", isCanvasMode);
+    
+    // Sync both switches
+    if (settingsCanvasToggle) settingsCanvasToggle.checked = isCanvasMode;
+    if (canvasToggleInput) canvasToggleInput.checked = isCanvasMode;
+    
+    applyTabIdentity();
+    if (typeof checkSecretTrigger === 'function') checkSecretTrigger();
+}
+
+if (settingsCanvasToggle) {
+    settingsCanvasToggle.checked = isCanvasMode;
+    settingsCanvasToggle.addEventListener('change', handleCanvasToggle);
+}
+if (canvasToggleInput) {
+    canvasToggleInput.checked = isCanvasMode;
+    canvasToggleInput.addEventListener('change', handleCanvasToggle);
+}
+
+// Wire up Custom Title Input
+const titleInput = document.getElementById("settingsTabTitle");
+if (titleInput) {
+    titleInput.value = (customTitle !== "Math Master") ? customTitle : "";
+    titleInput.addEventListener("input", (e) => {
+        customTitle = e.target.value || "Math Master";
+        localStorage.setItem("mathmaster_title", customTitle);
+        applyTabIdentity();
+    });
+}
+
+// Wire up Favicon File Upload
+const iconInput = document.getElementById("settingsTabIcon");
+if (iconInput) {
+    iconInput.addEventListener("change", (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            customFavicon = event.target.result; 
+            localStorage.setItem("mathmaster_favicon", customFavicon);
+            applyTabIdentity();
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+// Wire up Panic Key & URL Inputs
+const panicInput = document.getElementById("settingsPanicKey");
+const panicURLInput = document.getElementById("settingsPanicURL");
+
+if (panicInput) {
+    panicInput.value = panicKey;
+    panicInput.addEventListener("input", (e) => {
+        panicKey = e.target.value || "`";
+        localStorage.setItem("mathmaster_panic_key", panicKey);
+    });
+}
+
+if (panicURLInput) {
+    panicURLInput.value = (panicURL !== "https://www.google.com") ? panicURL : "";
+    panicURLInput.addEventListener("input", (e) => {
+        let val = e.target.value.trim();
+        if (val && !val.startsWith('http')) val = 'https://' + val;
+        panicURL = val || "https://www.google.com";
+        localStorage.setItem("mathmaster_panic_url", panicURL);
+    });
+}
+
+// Global Panic Key Listener
+document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key === panicKey) {
+        window.location.href = panicURL;
+    }
+});
+
+// About:Blank Cloaker
+function openAboutBlank() {
+    let win = window.open('about:blank', '_blank');
+    if (!win) return alert("Please allow pop-ups!");
+    let iframe = win.document.createElement('iframe');
+    iframe.src = window.location.href;
+    iframe.style = "width:100vw; height:100vh; border:none; margin:0;";
+    win.document.body.style = "margin:0; overflow:hidden;";
+    win.document.body.appendChild(iframe);
+    window.location.replace('https://classroom.google.com'); 
+}
+
+// Reset Settings
+function resetSettings() {
+    if (confirm("Reset all settings to default?")) {
+        const keys = ["_panic_key", "_panic_url", "_title", "_favicon", "_canvas_mode", "_controls", "_controls_vis"];
+        keys.forEach(k => localStorage.removeItem("mathmaster" + k));
+        window.location.reload();
+    }
+}
 // === Initialization ===
 window.onload = function() {
     renderGamesGrid();
